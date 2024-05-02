@@ -6,25 +6,40 @@ Created on Sat Apr 27 10:17:42 2024
 @author: morita
 """
 
+import numpy as np
 from core.file import File
-import CifFile
-from libs.cif2cell.uctools import CellData
+#import CifFile
+#from libs.cif2cell.uctools import CellData
 from core.elements import numbers
-from computation.pdf import histogram
+from computation.statistics import histogram,gr,total_gr,ncoeff
+import matplotlib.pyplot as plt
 
-"""
+
 path = "./data/amorphous_rmc/sio.cfg"
 elements = ['Si','O']
 f = File.open(path)
 atoms = f.getatoms(0,elements)
-#print(atoms.grid)
-"""
 
-path = "./data/amorphous_md/a_Si_speed1e11K.xyz"
-f = File.open(path)
-atoms = f.getatoms(0)
+#path = "./data/amorphous_md/a_SiO2_speed1e11K_rand.xyz"
+#f = File.open(path)
+#atoms = f.getatoms(0)
+symbols = ['Si','O']
+dr = 0.05
 
-print(atoms.norm_positions, atoms.elements)
+hist = histogram(atoms.norm_positions,atoms.elements,atoms.volume.vectors,
+                 dr,symbols=symbols)
+
+ni = [atoms.numbers[symbols[i]] for i in range(len(symbols))]
+r, gr = gr(hist,atoms.volume.vectors,ni,dr)
+
+frac = ni/np.sum(ni)
+coeff = ncoeff(symbols,frac)
+
+total_gr = total_gr(gr,coeff)
+plt.plot(r,total_gr)
+#for i in range(3):    
+#    plt.plot(r, gr.T[i])
+plt.show()
 
 """
 #path = "./data/pyMolDyn/structure_c.xyz"
@@ -53,14 +68,16 @@ cell_data.getFromCIF(cb)
 """
 
 """
-
-elements = ['Si','O','Si','O','Si','O','Si','O', 'K', 'H', 'K', 'H']
+#elements = ['Si','O','Si','O','Si','O','Si','O', 'K', 'H', 'K', 'H']
+elements = ['Si','O','Si','O','Si','O','Si','O']
+#numbers['SI'] = 1
+#numbers['O'] = 2
 indexes = list(range(len(elements)))
-
 sorted_elements, sorted_indexes = zip(*sorted(zip(elements, indexes), 
                                               key=lambda x: (numbers.get(str.upper(x[0]), x[1])),
-                                              reverse=True))
+                                              reverse=False))
 
+#print(sorted_elements)
 #print(sorted_data)
 
 #print(elements)

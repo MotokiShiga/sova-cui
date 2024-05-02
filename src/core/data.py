@@ -489,9 +489,9 @@ class Atoms(object):
         self.positions = np.array(positions, dtype=np.float64, copy=False)
         self.number = self.positions.shape[0]
         self.elements = np.array(elements, dtype="|U4", copy=False)
-        counter = collections.Counter(self.elements)        
-        self.elements_kind = sorted([k for k, v in counter.items() if v > 0])
-        self.elements_count = [counter[e] for e in self.elements_kind]        
+        self.numbers = dict(collections.Counter(self.elements))
+        self.elements_kind = sorted([k for k, v in self.numbers.items() if v > 0])
+        self.elements_count = [self.numbers[e] for e in self.elements_kind]        
         self.indices = None
         self.radii = radii
         self._covalence_radii = None
