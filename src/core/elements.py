@@ -614,3 +614,4 @@ radii[119] = 1.60
 symbols = [None]*120
 for symbol, num in numbers.items():
     symbols[num] = symbol
+

@@ -20,8 +20,8 @@ def volume(vectors, truncated=False):
             - vectors[1][0]*vectors[0][1]*vectors[2][2] \
             - vectors[0][0]*vectors[2][1]*vectors[1][2]
     _volume = 8.0*abs(triprod)
-    if(truncated == True):
-        _volume = _volume/2.0
+    if truncated:
+        _volume /= 2.0
 
     return _volume
 
@@ -75,9 +75,9 @@ class Grid(object):
         self.grid = [[[[] for i in range(self.grid_size+1)] \
                           for j in range(self.grid_size+1)] \
                           for k in range(self.grid_size+1)]
-        
         self.grid_co = np.zeros((self.nmol, 3), dtype=int)
-
+        self.make_grid()
+        
     def make_grid(self):
         for i in range(self.nmol):
             ix = int((self.centres[i][0]+1.0)*self.grid_size/2.0)+1
@@ -128,12 +128,13 @@ class Grid(object):
         self.coords = [[] for i in range(3)]
         self.d = []
         self.shifts = [[] for i in range(3)]
-
+                
         neigh = 0
         ng = int(rmax/self.cell_width)+1
         gridx = self.grid_co[ic][0]
         gridy = self.grid_co[ic][1]
         gridz = self.grid_co[ic][2]
+        
         for ix in range(gridx-ng, gridx+ng+1):
             iix = ix
             if (iix <= 0): iix = iix+self.grid_size
@@ -151,7 +152,7 @@ class Grid(object):
 
                     for ino in range(len(self.grid[iix][iiy][iiz])):
                         ig = self.grid[iix][iiy][iiz][ino]
-                        if(ig >= n1 and ig <= n2 and ig != ic):
+                        if(ig >= n1 and ig <= n2 and ig != ic):                            
                             x = self.centres[ig][0]-self.centres[ic][0]+3.
                             y = self.centres[ig][1]-self.centres[ic][1]+3.
                             z = self.centres[ig][2]-self.centres[ic][2]+3.

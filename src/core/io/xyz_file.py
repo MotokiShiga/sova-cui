@@ -8,7 +8,7 @@ import numpy as np
 from core import data
 from .input_file import InputFile
 from .io_utils import FileError
-from core.volumes import HexagonalVolume
+from core.volumes import HexagonalVolume,NonVolume
 
 class XYZFile(InputFile):
     """
@@ -66,12 +66,6 @@ class XYZFile(InputFile):
                         raise StopIteration
                     num_atoms = int(num_atoms)
                     f.readline() # volumestr
-                    # origin
-                    if isinstance(self.info.volume, HexagonalVolume):
-                        pass
-                    else:
-                        cx,cy,cz = np.array(self.info.volume.Minv).dot(np.array([0.5,0.5,0.5]))
-                        self.info.volume.origin = np.array([-cx,-cy,-cz])                                        
                     for i in range(num_atoms):
                         line = f.readline()
                         if line.strip():
@@ -79,6 +73,14 @@ class XYZFile(InputFile):
                             position = (float(x), float(y), float(z))
                             symbols.append(symbol)
                             positions.append(position)
+                    # origin
+                    if isinstance(self.info.volume, HexagonalVolume):
+                        cx,cy,cz = 0.0, 0.0, 0.0
+                    elif isinstance(self.info.volume, NonVolume):
+                        cx,cy,cz = 0.5*(np.max(positions,axis=0)+np.min(positions,axis=0))
+                    else:
+                        cx,cy,cz = np.array(self.info.volume.Minv).dot(np.array([0.5,0.5,0.5]))
+                        self.info.volume.origin = np.array([-cx,-cy,-cz])
                 except StopIteration:
                     raise IndexError("Frame {} not found".format(frame))
             return data.Atoms(positions, None, symbols, self.info.volume)

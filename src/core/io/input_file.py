@@ -60,7 +60,7 @@ class InputFile(object):
 
         return self._info
 
-    def getatoms(self, frame,*args):
+    def getatoms(self, frame=0,*args):
         """
         Read atom data for a specified frame.
         
@@ -82,7 +82,7 @@ class InputFile(object):
             if there are problems with the data in the file
         IOError : 
             if the file cannot be read
-        """        
+        """
         return self.readatoms(frame,*args)
 
     def readinfo(self):

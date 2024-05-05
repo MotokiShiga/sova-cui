@@ -22,6 +22,7 @@ cot = lambda alpha: cos(alpha) / sin(alpha)
 import itertools
 import numpy as np
 import numpy.linalg as la
+
 try:
     import numexpr as ne
     NUMEXPR = True
@@ -305,42 +306,6 @@ class TriclinicVolume(CellInfo):
             self._vectors = 0.5*np.array(self.Minv)
         return self._vectors
 
-    @property
-    def d(self):
-        triprod = self.vectors[0][0]*self.vectors[1][1]*self.vectors[2][2] \
-                + self.vectors[1][0]*self.vectors[2][1]*self.vectors[0][2] \
-                + self.vectors[2][0]*self.vectors[0][1]*self.vectors[1][2] \
-                - self.vectors[2][0]*self.vectors[1][1]*self.vectors[0][2] \
-                - self.vectors[1][0]*self.vectors[0][1]*self.vectors[2][2] \
-                - self.vectors[0][0]*self.vectors[2][1]*self.vectors[1][2]
-
-        axb1 = self.vectors[1][0]*self.vectors[2][1]-self.vectors[2][0]*self.vectors[1][1]
-        axb2 = self.vectors[2][0]*self.vectors[0][1]-self.vectors[0][0]*self.vectors[2][1]
-        axb3 = self.vectors[0][0]*self.vectors[1][1]-self.vectors[1][0]*self.vectors[0][1]
-        bxc1 = self.vectors[1][1]*self.vectors[2][2]-self.vectors[2][1]*self.vectors[1][2]
-        bxc2 = self.vectors[2][1]*self.vectors[0][2]-self.vectors[0][1]*self.vectors[2][2]
-        bxc3 = self.vectors[0][1]*self.vectors[1][2]-self.vectors[1][1]*self.vectors[0][2]
-        cxa1 = self.vectors[1][2]*self.vectors[2][0]-self.vectors[2][2]*self.vectors[1][0]
-        cxa2 = self.vectors[2][2]*self.vectors[0][0]-self.vectors[0][2]*self.vectors[2][0]
-        cxa3 = self.vectors[0][2]*self.vectors[1][0]-self.vectors[1][2]*self.vectors[0][0]
-        d1 = triprod/np.sqrt(axb1**2+axb2**2+axb3**2)
-        d2 = triprod/np.sqrt(bxc1**2+bxc2**2+bxc3**2)
-        d3 = triprod/np.sqrt(cxa1**2+cxa2**2+cxa3**2)
-        _d = min(d1,d2,d3)
-        
-        if self.truncated == True:
-            d1 = 1.5*triprod/np.sqrt( \
-                (axb1+bxc1+cxa1)**2+(axb2+bxc2+cxa2)**2+(axb3+bxc3+cxa3)**2)
-            d2 = 1.5*triprod/np.sqrt( \
-                (axb1-bxc1+cxa1)**2+(axb2-bxc2+cxa2)**2+(axb3-bxc3+cxa3)**2)
-            d3 = 1.5*triprod/np.sqrt( \
-                (axb1+bxc1-cxa1)**2+(axb2+bxc2-cxa2)**2+(axb3+bxc3-cxa3)**2)
-            d4 = 1.5*triprod/np.sqrt( \
-                (axb1-bxc1-cxa1)**2+(axb2-bxc2-cxa2)**2+(axb3-bxc3-cxa3)**2)
-            _d = min(_d,d1,d2,d3,d4)
-        
-        return _d
-
     def is_inside(self, point, periodic_boundary=[-0.5,0.5]):
         """
         Returns True if point is inside of the volume, False otherwise.
@@ -539,7 +504,8 @@ class NonVolume(CellInfo):
         super().__init__()
         
         self.periodic = False
-    
+        self.Minv = None
+        
     def __repr__(self):
         return "NON"
 

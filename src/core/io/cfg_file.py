@@ -146,7 +146,6 @@ class CFGFile(InputFile):
                     # actually read the molecule
                     symbols = []
                     positions = []
-                    rpositions = []
                     ver = f.readline()
                     title = f.readline()
 

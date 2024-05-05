@@ -14,9 +14,9 @@ from datetime import datetime
 from . import volumes
 import core.elements
 import core.bonds
-from .gridding import Grid
 from .volumes import HexagonalVolume, NonVolume
 from config.configuration import config
+from . import gridding
 
 try:
     from util.logger import Logger
@@ -504,7 +504,33 @@ class Atoms(object):
         self.sorted_indexes = None
         self._elementsorted_positions = None
         self._grid = None
-        
+        self.symbols = None # equal self.elements_kind
+        self.ni = None
+        self.frac = None
+        self.pairs = None
+        self.trios = None
+        # initialize
+        self.symbol_order()
+    
+    def symbol_order(self,symbols=None):
+        if symbols is None:
+            atomic_numbers = core.elements.numbers
+        else:
+            atomic_numbers = {str.upper(symbols[i]):(i+1) for i in range(len(symbols))}
+        self.symbols, self.ni = zip(*sorted(self.numbers.items(), key=lambda x: atomic_numbers.get(str.upper(x[0]))))
+        self.symbols = list(self.symbols)
+        self.ni = list(self.ni)
+        self.frac = self.ni/np.sum(self.ni)
+        self.pairs = []
+        for i in range(len(self.symbols)):
+            for j in range(i,len(self.symbols)):
+                self.pairs.append(self.symbols[i] + '-' + self.symbols[j])
+        self.trios = []
+        for i1, symbol1 in enumerate(self.symbols):
+            for i2, symbol2 in enumerate(self.symbols):
+                for i3 in range(i1+1):
+                    trio = '{0}-{1}-{2}'.format(symbol1, symbol2, self.symbols[i3])
+                    self.trios.append(trio)
     @property
     def covalence_radii(self):
         if self._covalence_radii is None:
@@ -527,6 +553,8 @@ class Atoms(object):
 
     @property
     def norm_positions(self):
+        if self.volume.Minv is None:
+            return None
         self.is_norm = True
         if self.is_norm == False:
             return self.positions
@@ -539,6 +567,14 @@ class Atoms(object):
                     pos = self.positions[i] - self.volume.origin - shift
                     self._norm_positions[i] = np.dot(inv, pos)
             return self._norm_positions        
+    
+    @property
+    def maximum(self):
+        return np.max(self.positions, axis=0)
+
+    @property
+    def minimum(self):
+        return np.min(self.positions, axis=0)
     
     @property
     def elementsorted_positions(self):
@@ -605,9 +641,13 @@ class Atoms(object):
         if self._grid is None:
             if isinstance(self.volume, HexagonalVolume) or isinstance(self.volume, NonVolume):
                 return None
-            self._grid = Grid(self.norm_positions, self.volume.vectors)
+            self._grid = gridding.Grid(self.norm_positions, self.volume.vectors)
         return self._grid
     
+    @property
+    def rho(self):
+        return self.number/gridding.volume(self.volume.vectors)
+
     def tohdf(self, h5group, overwrite=True):
         """
         Write the data to a hdf5 Group.

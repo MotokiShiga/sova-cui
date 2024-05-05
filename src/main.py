@@ -11,34 +11,59 @@ from core.file import File
 #import CifFile
 #from libs.cif2cell.uctools import CellData
 from core.elements import numbers
-from computation.statistics import histogram,gr,total_gr,ncoeff
+from computation.statistics import (histogram,gr,total_gr,SQ,total_SQ,total_FQ,
+                                    ncoeff,xcoeff,Gr,Tr,Nr)
 import matplotlib.pyplot as plt
+from core.gridding import volume
 
-
-path = "./data/amorphous_rmc/sio.cfg"
-elements = ['Si','O']
-f = File.open(path)
-atoms = f.getatoms(0,elements)
-
-#path = "./data/amorphous_md/a_SiO2_speed1e11K_rand.xyz"
+#path = "./data/amorphous_rmc/sio.cfg"
+#elements = ['Si','O']
 #f = File.open(path)
-#atoms = f.getatoms(0)
-symbols = ['Si','O']
+#atoms = f.getatoms(0,elements)
+
+path = "./data/amorphous_md/a_SiO2_speed1e11K_rand.xyz"
+f = File.open(path)
+atoms = f.getatoms()
 dr = 0.05
 
-hist = histogram(atoms.norm_positions,atoms.elements,atoms.volume.vectors,
-                 dr,symbols=symbols)
+# calculate histogram
+#_, hist = histogram(atoms,dr,symbols=['Si','O'])
+_, hist = histogram(atoms,dr)
 
-ni = [atoms.numbers[symbols[i]] for i in range(len(symbols))]
-r, gr = gr(hist,atoms.volume.vectors,ni,dr)
+# calculate g(r)
+r, gr = gr(atoms,hist,dr)
 
-frac = ni/np.sum(ni)
-coeff = ncoeff(symbols,frac)
-
+# calculate Total g(r)
+coeff = ncoeff(atoms.symbols,atoms.frac)
 total_gr = total_gr(gr,coeff)
-plt.plot(r,total_gr)
-#for i in range(3):    
-#    plt.plot(r, gr.T[i])
+
+# calculate S(Q)
+dq = 0.05
+qmin = 0.3
+qmax = 25.0
+q, sq = SQ(atoms,gr,qmin,qmax,dr,dq)
+
+# calculate Total S(Q)
+total_sq = total_SQ(sq,coeff)
+
+# calculate F(Q)
+coeff = xcoeff(atoms.symbols,atoms.frac,q)
+total_fq = total_FQ(sq,coeff)
+
+# calculate Gr
+rho = atoms.rho
+_Gr = Gr(r,total_gr,rho)
+
+# calculate Tr
+_Tr = Tr(r,total_gr,rho)
+
+# calculate Nr
+_Nr = Nr(r,_Tr)
+
+#plt.plot(r,_Nr)
+for i in range(3):    
+    plt.plot(q, sq.T[i], label=atoms.pairs[i])
+plt.legend()
 plt.show()
 
 """
