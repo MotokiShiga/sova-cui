@@ -7,6 +7,64 @@ Created on Tue Nov  8 16:58:10 2022
 
 import math
 import numpy as np
+#for the calculations of the distance matrix and angles (cosine)
+from scipy.spatial.distance import pdist, squareform, cosine  
+
+def angle(xi, xj, xk, degree=True):
+    """
+    calculate angle from 3 vectors / atomic coordinates: i(x,y,z); j(x,y,z); k(x,y,z) 
+    xyzarr is the array of all atomic coordinates
+
+    Parameters
+    ----------        
+    i : list
+        neighbor1 position.
+    j : list
+        center position.
+    k : list
+        neighbor1 position.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+
+    """
+    rij = xi - xj 
+    rkj = xk - xj
+	#remove if cosine fails
+	#cos_theta = np.dot(rij, rkj)
+	#sin_theta = np.linalg.norm(np.cross(rij, rkj))
+	#theta = np.arctan2(sin_theta, cos_theta)
+	#scipy pdist cosine instead of the 3 lines above 
+    theta = cosine(rij, rkj)    
+    if degree == False:
+        return 1.-theta
+    theta = np.arccos(1.-theta) 
+    return np.degrees(theta)
+
+def dihedral():
+    """
+    calculate the dihedral angle from 4 vectors
+    atomic coordinates: i(x,y,z); j(x,y,z); k(x,y,z); l(x,y,z)
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+
+    """
+    #no warning if division by zero
+    np.seterr(invalid='ignore')
+    rji = -1*(xyzarr[j] - xyzarr[i])
+    rkj = xyzarr[k] - xyzarr[j]
+    rlk = xyzarr[l] - xyzarr[k]
+    rkj /= np.linalg.norm(rkj)
+    v = rji - np.dot(rji, rkj)*rkj
+    w = rlk - np.dot(rlk, rkj)*rkj
+    x = np.dot(v, w)
+    y = np.dot(np.cross(rkj, v), w)
+    return np.degrees(np.arctan2(y,x))
 
 def matrix2lattice(m):    
     """

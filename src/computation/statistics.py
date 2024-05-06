@@ -12,6 +12,7 @@ from core.elements import numbers
 from core.gridding import metric, d, volume
 from . import element_data as elem
 import collections
+from .geometry import Polyhedron
 
 try:
     from computation.histogram import histogram as hist
@@ -530,5 +531,30 @@ def ceil(x, s):
 def floor(x, s):
     return s * math.floor(float(x)/s)
 
-def polyhedra(center,around,rmax):
-    pass
+def polyhedra(atoms,center,around,rmax):
+    ci = [i for i, s in enumerate(atoms.elements) if s == center]
+    ai = [i for i, s in enumerate(atoms.elements) if s == around]
+    
+    _polyhedra = []
+    if atoms.grid is not None:
+        grid = atoms.grid
+        for i in ci:            
+            grid.neighbours(i, rmax, 0, atoms.number-1)
+            _neighbors = []
+            indexes = []
+            for n, nei in enumerate(grid.inei):
+                if nei in ai:
+                    _neighbors.append(nei)
+                    indexes.append(n)            
+            coords = np.array(grid.coords).T[indexes]
+            vectors = []
+            for coord in coords:
+                vectors.append(np.dot(coord,atoms.volume.vectors))
+            shifts = np.array(grid.shifts).T[indexes]
+            p = Polyhedron(atoms,center=i,neighbors=_neighbors,
+                           vectors=vectors, shifts=shifts)                        
+            _polyhedra.append(p)            
+    else:
+        pass
+    
+    return _polyhedra

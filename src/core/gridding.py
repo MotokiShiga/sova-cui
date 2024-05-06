@@ -9,7 +9,6 @@ def metric(vectors):
         for j in range(3):
             for k in range(3):
                 _metric[i][j] = _metric[i][j]+vectors[k][i]*vectors[k][j]
-
     return _metric
 
 def volume(vectors, truncated=False):
@@ -46,8 +45,7 @@ def d(vectors, truncated=False):
     d2 = triprod/math.sqrt(bxc1**2+bxc2**2+bxc3**2)
     d3 = triprod/math.sqrt(cxa1**2+cxa2**2+cxa3**2)
     _d = min(d1,d2,d3)
-    if (truncated):
-        
+    if (truncated):        
         d1 = 1.5*triprod/math.sqrt( \
             (axb1+bxc1+cxa1)**2+(axb2+bxc2+cxa2)**2+(axb3+bxc3+cxa3)**2)
         d2 = 1.5*triprod/math.sqrt( \
@@ -219,6 +217,10 @@ class Grid(object):
             self.shifts[0][i] = sx
             self.shifts[1][i] = sy
             self.shifts[2][i] = sz
+
+        # convert numpy array
+        #self.shifts = np.array(self.shifts).T
+        #self.coords = np.array(self.coords).T        
 
     @staticmethod
     def sign(a, b):
