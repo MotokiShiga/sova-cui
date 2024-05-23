@@ -1,0 +1,77 @@
+#------------------------------------------------------------------------------
+#$Date: 2016-02-16 14:49:47 +0200 (Tue, 16 Feb 2016) $
+#$Revision: 176465 $
+#$URL: svn://www.crystallography.net/cod/cif/9/00/96/9009686.cif $
+#------------------------------------------------------------------------------
+#
+# This file is available in the Crystallography Open Database (COD),
+# http://www.crystallography.net/. The original data for this entry
+# were provided the American Mineralogist Crystal Structure Database,
+# http://rruff.geo.arizona.edu/AMS/amcsd.php
+#
+# The file may be used within the scientific community so long as
+# proper attribution is given to the journal article from which the
+# data were obtained.
+#
+data_9009686
+loop_
+_publ_author_name
+'Pluth, J. J.'
+'Smith, J. V.'
+'Faber, J.'
+_publ_section_title
+;
+ Crystal structure of low cristobalite at 10, 293, and 473 K:
+ Variation of framework geometry with temperature
+ Sample: T = 296 K
+ Locality: synthetic
+;
+_journal_name_full               'Journal of Applied Physics'
+_journal_page_first              1045
+_journal_page_last               1049
+_journal_paper_doi               10.1063/1.334545
+_journal_volume                  57
+_journal_year                    1985
+_chemical_formula_sum            'O2 Si'
+_chemical_name_mineral           Cristobalite
+_space_group_IT_number           92
+_symmetry_space_group_name_Hall  'P 4abw 2nw'
+_symmetry_space_group_name_H-M   'P 41 21 2'
+_cell_angle_alpha                90
+_cell_angle_beta                 90
+_cell_angle_gamma                90
+_cell_length_a                   4.9709
+_cell_length_b                   4.9709
+_cell_length_c                   6.9278
+_cell_volume                     171.185
+_diffrn_ambient_temperature      296
+_exptl_crystal_density_diffrn    2.331
+_cod_original_formula_sum        'Si O2'
+_cod_database_code               9009686
+loop_
+_symmetry_equiv_pos_as_xyz
+x,y,z
+y,x,-z
+1/2-y,1/2+x,1/4+z
+1/2-x,1/2+y,1/4-z
+-x,-y,1/2+z
+-y,-x,1/2-z
+1/2+y,1/2-x,3/4+z
+1/2+x,1/2-y,3/4-z
+loop_
+_atom_site_aniso_label
+_atom_site_aniso_U_11
+_atom_site_aniso_U_22
+_atom_site_aniso_U_33
+_atom_site_aniso_U_12
+_atom_site_aniso_U_13
+_atom_site_aniso_U_23
+Si 0.01302 0.01302 0.01362 0.00238 0.00035 -0.00035
+O 0.03993 0.00864 0.02188 -0.00376 0.00297 0.00646
+loop_
+_atom_site_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+Si 0.30050 0.30050 0.00000
+O 0.23920 0.10370 0.17860
