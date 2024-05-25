@@ -485,23 +485,9 @@ def enumerate_king_ring(atoms_extracted, atoms_all, chemical_bond_index, flag_pr
         #finish()
         return set_primitive_rings
 
-def enumerate_guttman_ring(atoms_extracted, atoms_all, chemical_bond_index,chemical_bond_index_cells):
+def enumerate_guttman_ring(atoms_extracted, atoms_all, chemical_bond_index):
     """enumerate Guttman's rings and their primitive rings
-    """
-
-    """        
-    def check_shift(path,bond_index,shifts):
-        sum_shift = np.zeros(3,dtype=int)
-        for ns, ne in zip(path, path[1:]+path[:1]):
-            sign = 1
-            if ns > ne:
-                ns, ne = ne, ns
-                sign = -1
-            index = bond_index.index([ns,ne])
-            shift = chemical_bond_index_cells[index]
-            sum_shift += sign*shift
-        return sum_shift
-    """
+    """    
     
     # enumerate Guttman's ring
     # a ring as the shortest path between two nearest neighbor nodes
@@ -704,12 +690,14 @@ class Molecule:
         self.xyz = self.atoms.positions
         self.atom_symbols = np.array(self.atoms.elements)
         #self.set_atoms = np.unique(self.atom_symbols)
+        """
         if lattice_size is False:
             # TODO temporary for Cubic system
             self.lattice_size = self.atoms.volume.vectors[0][0]*2.
         else:         
             self.lattice_size = lattice_size
         self.xyz = self.xyz % self.lattice_size
+        """
         
     def read_xyz(self, filename):
         """Load structure information from a xyz file
@@ -838,7 +826,7 @@ class Molecule:
         self.chemical_bond_index_atoms = index_atoms[bool_bond, :]
         if flag_periodicity:
             self.chemical_bond_index_cells = index_cells[bool_bond, :]
-            
+        
         #save options to make bonds
         self.bond_pair_atom_symbols = pair_atom_symbols 
         self.bond_pair_dist_max = pair_dist_max
@@ -1227,7 +1215,34 @@ class RING(Molecule):
                 tetra_neighbor_cell_indices = self.tetra_neighbor_cell_indices)
         else:
             print("Error: The file extension must be \".npz\"!")
-
+            
+    def calculate(self, ring_type, pair_atom_symbols, pair_dist_max, periodicity=True, p_pair=0.3,
+                  cutoff_size=None, atoms_extracted=None, chain=False):
+        
+        num_parallel = 0
+        if periodicity:            
+            self.make_bond_periodic(pair_atom_symbols, pair_dist_max, 
+                                    periodicity, p_pair)
+            self.enumerate_ring(ring_type, cutoff_size, num_parallel, atoms_extracted)
+                        
+            if chain:
+                rings = self.rings
+            else:                
+                rings = self.select_periodic_rings()
+                if len(rings) == 0:
+                    self.make_bond_ghost(pair_atom_symbols, pair_dist_max, 
+                                            periodicity, p_pair)
+                    self.enumerate_ring(ring_type, cutoff_size, num_parallel, atoms_extracted)
+                    rings = self.select_periodic_rings()
+        else:
+            self.make_bond(pair_atom_symbols, pair_dist_max)
+            self.enumerate_ring(ring_type, cutoff_size, num_parallel, atoms_extracted)
+            rings = self.rings
+            
+        self.rings = [list(r) for r in list(rings)] # save rings as list
+        
+        return self.rings
+            
     def enumerate_ring(self, ring_type, cutoff_size=None, num_parallel=0, atoms_extracted=None):
         """Enumerate rings
         
@@ -1260,7 +1275,7 @@ class RING(Molecule):
             atoms_extracted = atoms_all
         if self.unit_atoms_index is not None:            
             atoms_extracted = self.unit_atoms_index
-        
+                
         flag_type = True
         if (ring_type == RING.RingType.PRIMITIVE)&(num_parallel==0):
             set_rings = enumerate_primitive_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms, cutoff_size)
@@ -1278,7 +1293,7 @@ class RING(Molecule):
         #     set_rings = parallel_enumerate_king_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms, \
         #         flag_primitive=False, num_parallel=num_parallel)
         elif (ring_type == RING.RingType.GUTTMAN)&(num_parallel==0):
-            set_rings = enumerate_guttman_ring(atoms_extracted, atoms_all,self.chemical_bond_index_atoms,self.chemical_bond_index_cells)
+            set_rings = enumerate_guttman_ring(atoms_extracted, atoms_all,self.chemical_bond_index_atoms)
         # elif (ring_type=='Guttman')&(num_parallel!=0):
         #     set_rings = parallel_enumerate_guttman_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms, \
         #         num_parallel=num_parallel)
@@ -1290,11 +1305,13 @@ class RING(Molecule):
         if flag_type:
             self.ring_type = ring_type
             self.rings = [list(r) for r in list(set_rings)] # save rings as list
+    
+    def select_periodic_rings(self):
+        _rings = set()
         
-        rings = set()
         # check summation shift vector
         bond_index = self.chemical_bond_index_atoms.tolist()
-        for i, ring in enumerate(set_rings):
+        for i, ring in enumerate(self.rings):
             sum_shift = np.zeros(3, dtype='int8')
             lpath = list(ring)
             for ns, ne in zip(lpath, lpath[1:]+lpath[:1]):
@@ -1304,10 +1321,14 @@ class RING(Molecule):
                     sign = -1    
                 ib = bond_index.index([ns,ne])
                 shift = self.chemical_bond_index_cells[ib]
-                sum_shift += sign*shift
+                sum_shift += sign*shift            
             if not np.all(sum_shift == 0):
                 continue
-            path = [self.ghost[i] for i in ring] # create ghost path
+            
+            if self.ghost is not None:
+                path = [self.ghost[i] for i in ring] # create ghost path
+            else:
+                path = ring                
             path = np.array(path)
             i_min = np.argmin(path)
             path = tuple(np.r_[path[i_min:],path[:i_min]])
@@ -1315,11 +1336,10 @@ class RING(Molecule):
             if path[-1] < path[1]:
                 path = path[::-1]
                 path = tuple(np.r_[path[-1],path[:-1]])
-            rings.add(path)
-        
-        for i, ring in enumerate(rings):
-            print(i, ring)
+            _rings.add(path)
             
+        return _rings
+    
     """
     def check_bond(self):        
         self.shifts = []
