@@ -592,7 +592,7 @@ class Atoms(object):
     def bonds(self):
         if self._bonds is None:
             self._bonds = core.bonds.get_bonds_with_radii(self, 1.15)
-            #self._bonds = core.bonds.get_bonds_symetric_indicies(self._bonds)
+            self._bonds = core.bonds.get_bonds_symetric_indicies(self._bonds)
         return self._bonds
     
     def bonds_by_dist(self,min_dist,max_dist):
@@ -727,9 +727,9 @@ class CavitiesBase(object):
             characteristic_radii = getobj_from_h5group("characteristic_radii")
             cyclic_area_indices = getobj_from_h5group("cyclic_area_indices")
         else:
-                (timestamp, volumes, surface_areas, triangles,
-                 mass_centers, squared_gyration_radii, asphericities, acylindricities, anisotropies,
-                 characteristic_radii, cyclic_area_indices) = args[:11]
+            (timestamp, volumes, surface_areas, triangles,
+             mass_centers, squared_gyration_radii, asphericities, acylindricities, anisotropies,
+             characteristic_radii, cyclic_area_indices) = args[:11]            
 
         if not isinstance(timestamp, datetime):
             timestamp = dateutil.parser.parse(str(timestamp))
