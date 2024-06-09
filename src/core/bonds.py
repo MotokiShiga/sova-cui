@@ -9,6 +9,7 @@ import numpy as np
 import numpy.linalg as la
 from . import file
 import collections
+import itertools
 
 def clamping_acos(cos):
     """
@@ -39,13 +40,25 @@ def get_bonds_with_radii(atoms, radii_sum_factor):
     Two atoms are connected if their distance is less than or equals the sum of
     their covalent radii times a radii_sum_factor (e.g. 1.15).
     """
-    bond_target_index_arrays = []
-    for index, position in enumerate(atoms.positions):
-        distance_vector_array = atoms.positions[index+1:] - position
-        distance_squared_array = np.sum(np.square(distance_vector_array), axis=1)
-        delta_squared = np.square((atoms.covalence_radii[index+1:] + atoms.covalence_radii[index]) * radii_sum_factor)
-        bond_target_indices = (distance_squared_array <= delta_squared).nonzero()[0] + index + 1
-        bond_target_index_arrays.append(bond_target_indices)
+    bond_target_index_arrays = []    
+    if atoms.volume.vectors is None:        
+        for index, position in enumerate(atoms.positions):
+            distance_vector_array = atoms.positions[index+1:] - position
+            distance_squared_array = np.sum(np.square(distance_vector_array), axis=1)
+            delta_squared = np.square((atoms.covalence_radii[index+1:] + atoms.covalence_radii[index]) * radii_sum_factor)
+            bond_target_indices = (distance_squared_array <= delta_squared).nonzero()[0] + index + 1
+            bond_target_index_arrays.append(bond_target_indices)
+    else:
+        dist_max = 0.0
+        for ri, rj in itertools.combinations(atoms.covalence_radii, 2):
+            dist_max = max(dist_max, ri+rj)
+        grid = atoms.grid
+        for index in range(atoms.number):
+            grid.neighbours(index, dist_max, index+1, atoms.number)
+            delta = (atoms.covalence_radii[grid.inei] + atoms.covalence_radii[index]) * radii_sum_factor
+            bond_target_indices = np.array(grid.inei)
+            indices = (grid.d <= delta).nonzero()[0]
+            bond_target_index_arrays.append(bond_target_indices[indices])
     return bond_target_index_arrays
 
 def get_bonds_with_element_pair(atoms, min_dist, max_dist, radii_sum_factor):
