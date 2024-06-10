@@ -497,6 +497,8 @@ class Atoms(object):
         self._covalence_radii = None
         self._covalence_radii_by_element = None
         self._bonds = None
+        self.lengths = None
+        self.shifts = None
         self._colors = None
         self.is_norm = is_norm
         self._norm_positions = None
@@ -592,7 +594,7 @@ class Atoms(object):
     def bonds(self):
         if self._bonds is None:
             self._bonds = core.bonds.get_bonds_with_radii(self, 1.15)
-            self._bonds = core.bonds.get_bonds_symetric_indicies(self._bonds)
+            #self._bonds = core.bonds.get_bonds_symetric_indicies(self._bonds)                        
         return self._bonds
     
     def bonds_by_dist(self,min_dist,max_dist):

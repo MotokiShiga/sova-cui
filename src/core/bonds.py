@@ -40,14 +40,18 @@ def get_bonds_with_radii(atoms, radii_sum_factor):
     Two atoms are connected if their distance is less than or equals the sum of
     their covalent radii times a radii_sum_factor (e.g. 1.15).
     """
-    bond_target_index_arrays = []    
-    if atoms.volume.vectors is None:        
+    bond_target_index_arrays = []
+    length_arrays = []
+    shift_arrays = []
+    if not atoms.volume.periodic:
         for index, position in enumerate(atoms.positions):
             distance_vector_array = atoms.positions[index+1:] - position
             distance_squared_array = np.sum(np.square(distance_vector_array), axis=1)
-            delta_squared = np.square((atoms.covalence_radii[index+1:] + atoms.covalence_radii[index]) * radii_sum_factor)
+            delta_squared = np.square((atoms.covalence_radii[index+1:] + atoms.covalence_radii[index]) * radii_sum_factor)            
             bond_target_indices = (distance_squared_array <= delta_squared).nonzero()[0] + index + 1
             bond_target_index_arrays.append(bond_target_indices)
+            length_arrays.append(np.sqrt(distance_squared_array[bond_target_indices - index - 1]))       
+            shift_arrays.append(np.array([[0, 0, 0] for _ in bond_target_indices]))
     else:
         dist_max = 0.0
         for ri, rj in itertools.combinations(atoms.covalence_radii, 2):
@@ -59,6 +63,24 @@ def get_bonds_with_radii(atoms, radii_sum_factor):
             bond_target_indices = np.array(grid.inei)
             indices = (grid.d <= delta).nonzero()[0]
             bond_target_index_arrays.append(bond_target_indices[indices])
+            length_arrays.append(np.array(grid.d)[indices])
+            shift_arrays.append(np.array(grid.shifts).T[indices])
+
+    # get_bonds_symetric_indicies
+    bond_target_index_arrays = [bond_target_index_array.tolist() for bond_target_index_array in bond_target_index_arrays]
+    length_arrays = [length_array.tolist() for length_array in length_arrays]
+    shift_arrays = [shift_array.tolist() for shift_array in shift_arrays]
+    for index, bond_target_index_array in enumerate(bond_target_index_arrays):
+        for i, bond_target_index in enumerate(bond_target_index_array):
+            if bond_target_index > index:
+                bond_target_index_arrays[bond_target_index].append(index)
+                length_arrays[bond_target_index].append(length_arrays[index][i])
+                shift_arrays[bond_target_index].append(-np.array(shift_arrays[index][i]))
+
+    bond_target_index_arrays = np.array(bond_target_index_arrays, dtype=object)  
+    atoms.lengths = np.array(length_arrays, dtype=object)    
+    atoms.shifts = np.array(shift_arrays, dtype=object)    
+
     return bond_target_index_arrays
 
 def get_bonds_with_element_pair(atoms, min_dist, max_dist, radii_sum_factor):
@@ -92,6 +114,9 @@ def get_bonds_symetric_indicies(bond_target_index_arrays):
 
     bond_target_index_arrays = np.array(bond_target_index_arrays, dtype=object)    
     return bond_target_index_arrays
+
+def calculate_bond_length(atoms, i, j):
+    pass
 
 def calculate_bond_angles(atoms, bond_target_index_arrays):
     # Build dict: atom index -> bonded atom indices
