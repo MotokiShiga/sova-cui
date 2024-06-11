@@ -5,12 +5,15 @@ Created on Fri May  3 09:13:22 2024
 @author: H. Morita
 """
 
+import os, sys
+sys.path.append(os.path.join(os.path.dirname('__file__'), '..'))
+
 from core.file import File
 from computation.statistics import histogram
 import matplotlib.pyplot as plt
 
 # xyz file (no periodic cell)
-path = "./data/a_Si.xyz"
+path = "../data/a_Si.xyz"
 f = File.open(path)
 atoms = f.getatoms()
 
