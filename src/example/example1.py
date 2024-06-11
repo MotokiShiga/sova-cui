@@ -5,12 +5,15 @@ Created on Fri May  3 09:13:22 2024
 @author: H. Morita
 """
 
+import os, sys
+sys.path.append(os.path.join(os.path.dirname('__file__'), '..'))
+
 from core.file import File
 from computation.statistics import (histogram,gr,total_gr,SQ,total_SQ,total_FQ,
                                     ncoeff,xcoeff,Gr,Tr,Nr)
 import matplotlib.pyplot as plt
 
-path = "./data/amorphous_md/a_SiO2_speed1e11K_rand.xyz"
+path = "../data/amorphous_md/a_SiO2_speed1e11K_rand.xyz"
 f = File.open(path)
 atoms = f.getatoms()
 dr = 0.05

@@ -6,8 +6,8 @@ import math
 
 try:    
     from _path import basedir
-except ImportError:
-    basedir = './'
+except ImportError:    
+    basedir = os.path.dirname(__file__)    
 
 class ElementData(object):
     """
@@ -198,8 +198,7 @@ Xray = XrayDict(
     XrayData(109, 'Mt', 'Meitnerium')
 )
 
-Xray.read(os.path.join(basedir, "data", "xparm_ff.txt"))
-
+Xray.read(os.path.join(basedir, "xparm_ff.txt"))
 
 class NeutronData(ElementData):
     """
@@ -669,7 +668,7 @@ Neutron.append(
     NeutronData(96, 'Cm', 'Curium', 248, '0(+)')
 )
 
-Neutron.read(os.path.join(basedir, "data", "nparma_bb.txt"))
+Neutron.read(os.path.join(basedir, "nparma_bb.txt"))
 
 
 if __name__ == '__main__':

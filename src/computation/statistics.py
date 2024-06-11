@@ -13,7 +13,6 @@ from core.gridding import metric, d, volume
 from . import element_data as elem
 import collections
 from .geometry import Polyhedron
-from core.molecule import RING
 
 try:
     from computation.histogram import histogram as hist
@@ -135,6 +134,8 @@ def histogram(atoms,dr,symbols=None,truncated=False):
         vectors = atoms.volume.vectors
         _d = d(vectors)
         nr = int(_d/dr)+1
+        
+        has_hist = False
         
         if has_hist:
             atoms = []
@@ -560,17 +561,3 @@ def polyhedra(atoms,center,around,rmax):
         pass
     
     return _polyhedra
-
-def rings(atoms):    
-    ring = RING()
-    ring.set_atoms(atoms)
-    ring.make_bond_periodic(pair_atom_symbols=[['Si', 'O']], 
-                            pair_dist_max=[2.0], 
-                            flag_periodicity=True, 
-                            p_pair=0.001)
-    
-    cutoff_size = 24
-    ring.enumerate_ring(ring_type=RING.RingType.GUTTMAN,
-                        cutoff_size=cutoff_size, num_parallel=0)
-    
-    return ring
