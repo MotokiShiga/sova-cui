@@ -75,12 +75,14 @@ def get_bonds_with_radii(atoms, radii_sum_factor):
             if bond_target_index > index:
                 bond_target_index_arrays[bond_target_index].append(index)
                 length_arrays[bond_target_index].append(length_arrays[index][i])
-                shift_arrays[bond_target_index].append(-np.array(shift_arrays[index][i]))
+                shift_arrays[bond_target_index].append(-np.array(shift_arrays[index][i]))                
 
     bond_target_index_arrays = np.array(bond_target_index_arrays, dtype=object)  
-    atoms.lengths = np.array(length_arrays, dtype=object)    
-    atoms.shifts = np.array(shift_arrays, dtype=object)    
-
+    atoms.lengths = np.array(length_arrays, dtype=object)
+    atoms.shifts = [] # np.array(shift_arrays, dtype=object)
+    for shift in shift_arrays:
+        atoms.shifts.append(np.array(shift))
+        
     return bond_target_index_arrays
 
 def get_bonds_with_element_pair(atoms, min_dist, max_dist, radii_sum_factor):

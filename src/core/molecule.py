@@ -6,7 +6,8 @@ import time, itertools, os, shutil, pickle, multiprocessing
 import numba as nb
 import networkx as nx
 from core.gridding import Grid
-import tqdm
+from tqdm import tqdm
+#from tqdm.notebook import tqdm
 
 try:
     import igraph as ig
@@ -75,6 +76,8 @@ def enumerate_primitive_ring(atoms_extracted, atoms_all, chemical_bond_index, cu
     set_rings=set()
     #progress(0)
     num = len(atoms_extracted)
+    progress_bar = tqdm(total = num)
+    
     for ic, n_source in enumerate(atoms_extracted):
         length = D[n_source]
         for L in range(1,round(cutoff_size/2)+1):
@@ -176,6 +179,8 @@ def enumerate_primitive_ring(atoms_extracted, atoms_all, chemical_bond_index, cu
                                     set_rings.add(path)
                                     
         #progress(int((ic+1)/num*100))
+        progress_bar.update()
+        
     #finish()
     
     return set_rings
@@ -197,6 +202,8 @@ def enumerate_king_ring(atoms_extracted, atoms_all, chemical_bond_index, flag_pr
         G.add_edges_from(chemical_bond_index)
     #progress(0)
     num = len(atoms_extracted)
+    progress_bar = tqdm(total = num)
+    
     for ic, n in enumerate(atoms_extracted):
         neighbors = list(nx.all_neighbors(G, n))
         if len(neighbors)>=2:
@@ -233,7 +240,8 @@ def enumerate_king_ring(atoms_extracted, atoms_all, chemical_bond_index, flag_pr
                 else:
                     G.add_edge(n, n0)
         #progress(int((ic+1)/num*100))
-    
+        progress_bar.update()
+        
     if not(flag_primitive):
         #finish()
         return set_rings
@@ -274,9 +282,11 @@ def enumerate_guttman_ring(atoms_extracted, atoms_all, chemical_bond_index):
         G.add_edges_from(chemical_bond_index)    
     
     bond_index = chemical_bond_index.tolist()
-    
+        
     #progress(0)
     num = chemical_bond_index.shape[0]
+    progress_bar = tqdm(total = num)
+    
     for i in range(chemical_bond_index.shape[0]):
         n0 = chemical_bond_index[i,0]
         n1 = chemical_bond_index[i,1]
@@ -309,6 +319,7 @@ def enumerate_guttman_ring(atoms_extracted, atoms_all, chemical_bond_index):
             else:
                 G.add_edge(n0, n1)            
         #progress(int((i+1)/num*100))
+        progress_bar.update()
         
     return set_rings
 
@@ -428,6 +439,17 @@ class Ring(object):
         if self._roughness is None:            
             self._roughness = self.ellipsoid_lengths[2]/np.sqrt(self.ellipsoid_lengths[0]*self.ellipsoid_lengths[1])        
         return self._roughness
+
+    @property
+    def over_boundary(self):
+        bond_index = self.atoms.bonds.tolist()
+        lpath = list(self.indexes)
+        for ns, ne in zip(lpath, lpath[1:]+lpath[:1]):
+            i = bond_index[ns].index(ne)
+            shift = self.atoms.shifts[ns][i]
+            if not np.all(shift == 0):
+                return True
+        return False
     
 class RINGs(Molecule):
     
