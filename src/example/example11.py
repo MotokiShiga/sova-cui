@@ -9,7 +9,7 @@ import os, sys
 sys.path.append(os.path.join(os.path.dirname('__file__'), '..'))
 
 from core.file import File
-from core.molecule import RINGs
+from computation.rings import RINGs
 
 path = "../data/crystal/sio2_beta_cristobalite333.cif"
 f = File.open(path)
