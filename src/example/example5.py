@@ -6,7 +6,7 @@ Created on Fri May  3 09:13:22 2024
 """
 
 from core.file import File
-from computation.statistics import (histogram,gr,total_gr,SQ,total_SQ,total_FQ,
+from computation.structure_factor import (histogram,gr,total_gr,SQ,total_SQ,total_FQ,
                                     ncoeff,xcoeff,Gr,Tr,Nr)
 import matplotlib.pyplot as plt
 

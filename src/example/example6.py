@@ -6,7 +6,7 @@ Created on Fri May  3 09:13:22 2024
 """
 
 from core.file import File
-from computation.statistics import neighbor, neighbors
+from computation.structure_factor import neighbor, neighbors
 import matplotlib.pyplot as plt
 
 path = "./data/amorphous_rmc/sio.cfg"

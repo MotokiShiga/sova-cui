@@ -6,7 +6,7 @@ Created on Fri May  3 09:13:22 2024
 """
 
 from core.file import File
-from computation.statistics import triplets
+from computation.structure_factor import triplets
 import matplotlib.pyplot as plt
 
 path = "./data/crystal/si222.cif"
