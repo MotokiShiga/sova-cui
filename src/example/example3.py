@@ -9,7 +9,7 @@ import os, sys
 sys.path.append(os.path.join(os.path.dirname('__file__'), '..'))
 
 from core.file import File
-from computation.statistics import histogram
+from computation.structure_factor import histogram
 import matplotlib.pyplot as plt
 
 # xyz file (no periodic cell)

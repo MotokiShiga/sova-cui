@@ -9,7 +9,7 @@ import os, sys
 sys.path.append(os.path.join(os.path.dirname('__file__'), '..'))
 
 from core.file import File
-from computation.statistics import (histogram,gr,total_gr,SQ,total_SQ,total_FQ,
+from computation.structure_factor import (histogram,gr,total_gr,SQ,total_SQ,total_FQ,
                                     ncoeff,xcoeff,Gr,Tr,Nr)
 import matplotlib.pyplot as plt
 
