@@ -8,7 +8,7 @@ import h5py
 from util.message import print_message
 from . import algorithm
 #from .extension import mark_translation_vectors
-from core.calculation.extension.extension_ctypes import mark_translation_vectors
+from computation.cavity_calculation.extension.extension_ctypes import mark_translation_vectors
 try:
     import numexpr as ne
     NUMEXPR = True

@@ -853,7 +853,7 @@ class Domains(CavitiesBase):
             read the data from this hdf5 group
         """
         # Import this here to avoid cyclic imports
-        from .calculation import algorithm as algorithm
+        from computation.cavity_calculation import algorithm as algorithm
 
         if isinstance(args[0], h5py.Group):
             super(Domains, self).__init__(*args)
@@ -952,7 +952,7 @@ class Cavities(CavitiesBase):
             read the data from this hdf5 group
         """
         # Import this here to avoid cyclic imports
-        from .calculation import algorithm as algorithm
+        from computation.cavity_calculation import algorithm as algorithm
 
         if isinstance(args[0], h5py.Group):
             super(Cavities, self).__init__(*args)

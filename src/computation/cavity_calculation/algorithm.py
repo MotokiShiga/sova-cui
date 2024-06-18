@@ -70,10 +70,10 @@ import numpy as np
 
 from computation.split_and_merge.pipeline import start_split_and_merge_pipeline
 from computation.split_and_merge.algorithm import ObjectType
-from core.calculation.gyrationtensor import calculate_gyration_tensor_parameters
+from computation.cavity_calculation.gyrationtensor import calculate_gyration_tensor_parameters
 from util.message import print_message
 #from .extension import atomstogrid, mark_cavities, cavity_triangles, cavity_intersections
-from core.calculation.extension.extension_ctypes import atomstogrid, mark_cavities, cavity_triangles, cavity_intersections
+from computation.cavity_calculation.extension.extension_ctypes import atomstogrid, mark_cavities, cavity_triangles, cavity_intersections
 
 
 dimension = 3
