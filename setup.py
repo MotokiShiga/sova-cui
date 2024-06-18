@@ -15,5 +15,6 @@ setup(
     author_email='motoki.shiga.b4@tohoku.ac.jp',
     url='https://www.shiga-lab.org/sova',
     
-    packages=find_packages(),    
+    include_package_data=True,
+    packages=find_packages(),      
 )

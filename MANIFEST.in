@@ -1,0 +1,9 @@
+include sova/computation/histogram/*.pyd
+include sova/computation/cavity_calculation/extension/*.dll
+include sova/computation/split_and_merge/util/numpy_extension/*.pyd
+include sova/computation/split_and_merge/domain_centers/*.pyd
+include sova/computation/histogram/*.so
+include sova/computation/cavity_calculation/extension/*.so
+include sova/computation/split_and_merge/util/numpy_extension/*.so
+include sova/computation/split_and_merge/domain_centers/*.so
+include sova/computation/*.txt
