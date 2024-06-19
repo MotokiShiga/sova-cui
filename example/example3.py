@@ -5,11 +5,8 @@ Created on Fri May  3 09:13:22 2024
 @author: H. Morita
 """
 
-import os, sys
-sys.path.append(os.path.join(os.path.dirname('__file__'), '..'))
-
-from core.file import File
-from computation.structure_factor import histogram
+from sova.core.file import File
+from sova.computation.structure_factor import histogram
 import matplotlib.pyplot as plt
 
 # xyz file (no periodic cell)

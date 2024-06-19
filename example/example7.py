@@ -5,11 +5,11 @@ Created on Fri May  3 09:13:22 2024
 @author: H. Morita
 """
 
-from core.file import File
-from computation.structure_factor import triplets
+from sova.core.file import File
+from sova.computation.structure_factor import triplets
 import matplotlib.pyplot as plt
 
-path = "./data/sio.cfg"
+path = "../data/sio.cfg"
 f = File.open(path)
 elements = ['Si','O']
 atoms = f.getatoms(0,elements)

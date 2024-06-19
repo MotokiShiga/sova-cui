@@ -5,11 +5,11 @@ Created on Fri May  3 09:13:22 2024
 @author: H. Morita
 """
 
-from core.file import File
-from computation.structure_factor import neighbor, neighbors
+from sova.core.file import File
+from sova.computation.structure_factor import neighbor, neighbors
 import matplotlib.pyplot as plt
 
-path = "./data/amorphous_rmc/sio.cfg"
+path = "../data/amorphous_rmc/sio.cfg"
 f = File.open(path)
 elements = ['Si','O']
 atoms = f.getatoms(0,elements)
@@ -17,7 +17,7 @@ atoms = f.getatoms(0,elements)
 #nei, dis = neighbor(atoms,0,2.0)
 #neighbors(atoms,rmin=[0.,0.,0.], rmax=[4.,2.,3.])
 
-path = "./data/amorphous_md/a_SiO2_speed1e11K_rand.xyz"
+path = "../data/amorphous_md/a_SiO2_speed1e11K_rand.xyz"
 f = File.open(path)
 atoms = f.getatoms()
 

@@ -4,12 +4,9 @@ Created on Fri May  3 09:13:22 2024
 
 @author: H. Morita
 """
-
-import os, sys
-sys.path.append(os.path.join(os.path.dirname('__file__'), '..'))
-
-from core.file import File
-from computation.cavity import Cavity
+import os
+from sova.core.file import File
+from sova.computation.cavity import Cavity
 
 path = "../data/amorphous_rmc/sio.cfg"
 f = File.open(path)

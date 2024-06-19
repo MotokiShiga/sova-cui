@@ -5,12 +5,12 @@ Created on Fri May  3 09:13:22 2024
 @author: H. Morita
 """
 
-from core.file import File
-from computation.structure_factor import (histogram,gr,total_gr,SQ,total_SQ,total_FQ,
+from sova.core.file import File
+from sova.computation.structure_factor import (histogram,gr,total_gr,SQ,total_SQ,total_FQ,
                                     ncoeff,xcoeff,Gr,Tr,Nr)
 import matplotlib.pyplot as plt
 
-path = "./data/amorphous_rmc/sio.cfg"
+path = "../data/amorphous_rmc/sio.cfg"
 f = File.open(path)
 elements = ['Si','O']
 atoms = f.getatoms(0,elements)

@@ -5,12 +5,12 @@ Created on Fri May  3 09:13:22 2024
 @author: H. Morita
 """
 
-from core.file import File
-from computation.structure_factor import polyhedra
+from sova.core.file import File
+from sova.computation.structure_factor import polyhedra
 import matplotlib.pyplot as plt
 import numpy as np
 
-path = "./data/crystal/sio2_beta_cristobalite222.cif"
+path = "../data/crystal/sio2_beta_cristobalite222.cif"
 f = File.open(path)
 atoms = f.getatoms()
 
