@@ -10,22 +10,23 @@ from setuptools.command.install import install
 import shutil
 import os
 import subprocess
+import platform
 
-class my_install(install):
-  description = "install myapp"
+class sova_install(install):
+  description = "install SOVA"
 
-  # 自分の処理に必要なオプションを追加
-  #user_options = install.user_options + [
-  #  ('my-data-dir=', 'd', "base directory for installing my data files." ),
-  #]
   def initialize_options(self): 
       self.my_data_dir = '/opt/myapp-data'
       install.initialize_options(self)
 
   def _pre_install(self):
       #os.mkdir('data1')
-      path = os.path.join(os.path.dirname(__file__), 'make.bat')
-      subprocess.Popen(path)
+      if platform.system() == 'Windows':
+          path = os.path.join(os.path.dirname(__file__), 'make.bat')
+          subprocess.Popen(path)
+      else:
+          os.system("./make.sh")
+
       #shutil.copytree('./data', self.my_data_dir)
 
   def run(self): 
@@ -33,8 +34,6 @@ class my_install(install):
       install.run(self)
 
   def get_outputs(self): 
-      # get_outputsは--recordオプション指定時に呼ばれ、install時に作成したファイルとディレクトリのリストを返す。 
-      # pip uninstall をした時に削除してほしいものがあれば、ここで返すようにする。 
       return install.get_outputs(self) + [self.my_data_dir]
         
 setup(
@@ -47,5 +46,5 @@ setup(
     
     include_package_data=True,
     packages=find_packages(),   
-    cmdclass={'install': my_install},
+    cmdclass={'install': sova_install},
 )
