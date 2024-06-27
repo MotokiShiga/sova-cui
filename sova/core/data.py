@@ -477,7 +477,7 @@ class Atoms(object):
                 is_norm = False
                 if len(args) > 4:
                     is_norm = args[4]
-            
+                                
             if isinstance(volume, str):
                 volume = volumes.Volume.fromstring(volume)
 
@@ -1061,7 +1061,7 @@ class Results(object):
                  domains=None, 
                  surface_cavities=None, 
                  center_cavities=None,
-                 ring=None, polyhedra=None, 
+                 rings=None, polyhedra=None, 
                  config=None):
         """
         constructor
@@ -1097,7 +1097,7 @@ class Results(object):
         self.domains = domains
         self.surface_cavities = surface_cavities
         self.center_cavities = center_cavities
-        self.ring = ring
+        self.rings = rings
         self.polyhedra = polyhedra
         self.config = config
         
@@ -1276,4 +1276,43 @@ class Results(object):
             return self.center_cavities.triangles
         else:
             return None
+
+class ResultsFile(Results):
+    def __init__(self, atoms=None, filepath='',
+                 rings=None, cavity=None):
+        
+        if cavity is None:
+            domains = None
+            surface_cavities = None
+            center_cavities = None
+        else:
+            domains=cavity.domains
+            surface_cavities = cavity.surface_cavities
+            center_cavities = cavity.center_cavities
+            
+        super().__init__(filepath=filepath, frame=0, resolution=0, 
+                         atoms=atoms, 
+                         domains=domains, 
+                         surface_cavities=surface_cavities,
+                         center_cavities=center_cavities,
+                         rings=rings, polyhedra=None,
+                         config=None)
     
+    def read(self, filepath):
+        with h5py.File(filepath, "r") as f:
+            if 'atoms' in f:                
+                group = f['atoms']
+                positions = np.array(group['positions'])
+                radii = np.array(group['radii'])
+                elements = [s.decode() for s in group['elements'][:]]
+                volume = group['volume'][0].decode()
+            self.atoms = Atoms(positions, radii, elements, volume)
+                            
+    def write(self, filepath):
+        with h5py.File(filepath, "w") as f:
+            group = f.create_group("atoms")
+            group['positions'] = self.atoms.positions
+            group['radii'] = self.atoms.radii
+            group['elements'] = self.atoms.elements.tolist()
+            group['volume'] = [str(self.atoms.volume)]
+            
