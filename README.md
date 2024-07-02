@@ -6,6 +6,6 @@
 ```sh
 
 # install from source
-pip install '.[dev,plot]'
+pip install .
 
 ```
