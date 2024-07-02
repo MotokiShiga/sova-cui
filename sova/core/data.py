@@ -1277,30 +1277,56 @@ class Results(object):
             return self.center_cavities.triangles
         else:
             return None
-
+       
 class ResultsFile(Results):
-    def __init__(self, atoms=None, filepath='',
+    def __init__(self, file, mode, atoms=None,
                  rings=None, cavity=None):
+                
+        self.mode = mode
+        self._cavity = cavity
         
         if cavity is None:
             domains = None
             surface_cavities = None
             center_cavities = None
         else:
-            domains=cavity.domains
+            domains = cavity.domains
             surface_cavities = cavity.surface_cavities
             center_cavities = cavity.center_cavities
             
-        super().__init__(filepath=filepath, frame=0, resolution=0, 
+        super().__init__(filepath=file, frame=0, resolution=0, 
                          atoms=atoms, 
                          domains=domains, 
                          surface_cavities=surface_cavities,
                          center_cavities=center_cavities,
                          rings=rings, polyhedra=None,
                          config=None)
+        
+    def __enter__(self):
+        if self.mode == 'r':
+            self.read()        
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if self.mode == 'w':
+            self.write()
     
-    def read(self, filepath):
-        with h5py.File(filepath, "r") as f:
+    @property
+    def cavity(self):
+        return self._cavity
+    
+    @cavity.setter
+    def cavity(self, value):
+        self._cavity = value
+        self.domains = self._cavity.domains
+        self.surface_cavities = self._cavity.surface_cavities
+        self.center_cavities = self._cavity.center_cavities
+    
+    def flush(self):
+        self.write()
+    
+    def read(self):
+        with h5py.File(self.filepath, "r") as f:
             if 'atoms' in f:
                 group = f['atoms']
                 positions = np.array(group['positions'])
@@ -1321,9 +1347,25 @@ class ResultsFile(Results):
                         indexes = iring               
                     ring = Ring(self.atoms, indexes)
                     self.rings.append(ring)
+                    
+            if 'domains' in f:
+                group = f['domains']
+                self.domains = Domains(group)
                 
-    def write(self, filepath, overwrite=True):
-        with h5py.File(filepath, "w") as f:
+            if 'surface_cavities' in f:
+                group = f['surface_cavities']
+                self.surface_cavities = Cavities(group)
+                
+            if 'center_cavities' in f:
+                group = f['center_cavities']
+                self.center_cavities = Cavities(group)
+            
+            #self._cavity.domains = self.domains
+            #self._cavity.surface_cavities = self.surface_cavities
+            #self._cavity.center_cavities = self.center_cavities
+            
+    def write(self, overwrite=True):
+        with h5py.File(self.filepath, "w") as f:
             group = f.create_group("atoms")
             group['positions'] = self.atoms.positions
             group['radii'] = self.atoms.radii

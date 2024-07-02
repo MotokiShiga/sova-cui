@@ -28,13 +28,13 @@ cavity.calculate()
 path = "./a_SiO2_speed1e11K_rand.hdf5"
 
 # save
-f = ResultsFile(atoms, filepath=path)
-f.rings = rings
-f.domains = cavity.domains
-f.surface_cavities = cavity.surface_cavities
-f.center_cavities = cavity.center_cavities
-f.write(filepath=path)
+with ResultsFile(path, 'w', atoms) as f:
+    f.rings = rings
+    f.domains = cavity.domains
+    f.surface_cavities = cavity.surface_cavities
+    f.center_cavities = cavity.center_cavities
+    f.flush()
 
 # open
-f.read(filepath=path)
-atoms = f.atoms
+with ResultsFile(path, 'r') as f:
+    a = f.atoms
