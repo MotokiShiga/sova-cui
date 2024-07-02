@@ -1322,7 +1322,7 @@ class ResultsFile(Results):
                     ring = Ring(self.atoms, indexes)
                     self.rings.append(ring)
                 
-    def write(self, filepath):
+    def write(self, filepath, overwrite=True):
         with h5py.File(filepath, "w") as f:
             group = f.create_group("atoms")
             group['positions'] = self.atoms.positions
@@ -1341,5 +1341,13 @@ class ResultsFile(Results):
                 for ring in self.rings:
                     irings.append(ring.indexes + [-1]*(max_size-len(ring.indexes)))
                 group['indexes'] = irings
-                                
                 
+            if self.domains is not None:
+                group = f.create_group("domains")
+                self.domains.tohdf(group, overwrite)
+            if self.surface_cavities is not None:
+                group = f.create_group("surface_cavities")
+                self.surface_cavities.tohdf(group, overwrite)
+            if self.surface_cavities is not None:
+                group = f.create_group("center_cavities")
+                self.center_cavities.tohdf(group, overwrite)
