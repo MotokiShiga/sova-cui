@@ -17,6 +17,7 @@ from . import bonds
 from .volumes import HexagonalVolume, NonVolume
 from ..config.configuration import config
 from . import gridding
+from ..computation.rings import Ring
 
 try:
     from util.logger import Logger
@@ -1300,14 +1301,27 @@ class ResultsFile(Results):
     
     def read(self, filepath):
         with h5py.File(filepath, "r") as f:
-            if 'atoms' in f:                
+            if 'atoms' in f:
                 group = f['atoms']
                 positions = np.array(group['positions'])
                 radii = np.array(group['radii'])
                 elements = [s.decode() for s in group['elements'][:]]
                 volume = group['volume'][0].decode()
             self.atoms = Atoms(positions, radii, elements, volume)
-                            
+            
+            if 'rings' in f:
+                group = f['rings']
+                irings = np.array(group['indexes']).tolist()
+                self.rings = []
+                for iring in irings:
+                    try:
+                        i = iring.index(-1)
+                        indexes = iring[:i]
+                    except ValueError:
+                        indexes = iring               
+                    ring = Ring(self.atoms, indexes)
+                    self.rings.append(ring)
+                
     def write(self, filepath):
         with h5py.File(filepath, "w") as f:
             group = f.create_group("atoms")
@@ -1316,3 +1330,16 @@ class ResultsFile(Results):
             group['elements'] = self.atoms.elements.tolist()
             group['volume'] = [str(self.atoms.volume)]
             
+            if self.rings is not None:
+                group = f.create_group("rings")
+                # get max size
+                max_size = 0
+                for ring in self.rings:
+                    max_size = max(max_size, len(ring.indexes))
+                ring = self.rings[0]
+                irings = []
+                for ring in self.rings:
+                    irings.append(ring.indexes + [-1]*(max_size-len(ring.indexes)))
+                group['indexes'] = irings
+                                
+                
