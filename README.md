@@ -57,10 +57,10 @@ example12 : Cavity calculation
 example13 : Data save and load.
 ``` 
 
-execute example1.py
+Execute example1.py:
 
-histogram 
+histogram:
 <img src="docs/Figure_1_1.png" height=200 />
 
-g(r), S(Q)
+g(r), S(Q):
 <img src="docs/Figure_1_2.png" height=200 />
