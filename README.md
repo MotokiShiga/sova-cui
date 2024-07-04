@@ -59,8 +59,10 @@ example13 : Data save and load.
 
 Execute example1.py:
 
-histogram:
+```histogram
+```
 <img src="docs/Figure_1_1.png" height=200 />
 
-g(r), S(Q):
-<img src="docs/Figure_1_2.png" height=200 />
+```Partial, Total for g(r), S(Q), etc.
+```
+<img src="docs/Figure_1_2.png" height=400 />
