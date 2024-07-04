@@ -1,11 +1,20 @@
 # sova-cui-dev
 
 
-# Install and Run
 
-```sh
+# Installation and Run
+1. Clone the SOVA repo
 
-# install from source
-pip install .
+  ```sh
+  git clone https://github.com/***/sova-cui.git
+  ```
 
-```
+2. Install the pip package    
+  ```sh
+  # Option 1: install from PyPI
+  pip install sova
+  
+  # Option 2: install from source
+  To enable verbose mode, use the -v option.
+  pip install [-v] .
+  ```

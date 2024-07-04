@@ -16,7 +16,7 @@ class sova_install(install):
   description = "install SOVA"
 
   def initialize_options(self): 
-      self.my_data_dir = '/opt/myapp-data'
+      #self.my_data_dir = '/opt/myapp-data'
       install.initialize_options(self)
 
   def _pre_install(self):
@@ -26,8 +26,6 @@ class sova_install(install):
           subprocess.Popen(path)
       else:
           os.system("./make.sh")
-
-      #shutil.copytree('./data', self.my_data_dir)
 
   def run(self): 
       self._pre_install()
@@ -39,7 +37,13 @@ class sova_install(install):
 setup(
     name='sova',
     version='0.1.0',
-    
+    install_requires=[
+        'numpy==1.23.5',
+        'scipy==1.8.1',
+        'ase==3.22.1',
+        'matplotlib',
+        'h5py',
+    ],
     author='Tohoku Univ.',
     author_email='motoki.shiga.b4@tohoku.ac.jp',
     url='https://www.shiga-lab.org/sova',
