@@ -41,16 +41,26 @@ atoms = f.getatoms()
 ```
 
 ## Example
-example1 : PDF analysis of the XYZ file with cell information (a_SiO2_speed1e11K_rand.xyz: atomic order randomized).
-example2 : セル情報ありxyzファイル（a_SiO2_speed1e11K_rand.xyz）[Si,O]にソートしたPDF解析
-example3 : セル情報なしxyzファイル（a_Si.xyz）のPDF解析
-example4 : cifファイル（sio2_beta_cristobalite222.cif）のPDF解析
-example5 : cfgファイル（sio.cfg）のPDF解析
-example6 : 配位数計算
-example7 : 角度分布解析(sio.cfgファイル)
-example8 : 角度分布解析(a_Si.cifファイル)
-example9 : 多面体解析(sio2_beta_cristobalite222.cif)
-example10 : 多面体解析(a_SiO2_speed1e11K_rand.xyz)
-example11 : ring解析
-example12 : cavity解析
-example13 : データの保存、読み込み
+```sh
+example1 : PDF analysis of the XYZ file with cell information.
+example2 : PDF analysis of the XYZ file with cell information. sort [Si,O]
+example3 : PDF analysis of the XYZ file with no cell information.
+example4 : PDF analysis of the CIF file
+example5 : PDF analysis of the cfg file (Reverse Monte Carlo file format)
+example6 : Coordination number calculation
+example7 : Angle distribution calculation (cfg file)
+example8 : Angle distribution calculation (CIF file)
+example9 : Polyhedra calculation (CIF file)
+example10 : Polyhedra calculation XYZg file)
+example11 : RINGs calculation
+example12 : Cavity calculation
+example13 : Data save and load.
+``` 
+
+execute example1.py
+
+histogram 
+<img src="docs/Figure_1_1.png" height=200 />
+
+g(r), S(Q)
+<img src="docs/Figure_1_2.png" height=200 />
