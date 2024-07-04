@@ -24,6 +24,8 @@ ax = fig.add_subplot()
 ax.bar(angle, hist[0], width=w*0.8, label=atoms.trios[0])
 ax.set_xlim(0.0,180.0)
 #ax.set_ylim(0,800)
+ax.set_xlabel('angle(°)')
+ax.set_ylabel('distribution')
 ax.legend()
 plt.show()
 

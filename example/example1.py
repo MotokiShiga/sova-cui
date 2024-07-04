@@ -19,13 +19,16 @@ dr = 0.05
 #_, hist = histogram(atoms,dr,symbols=['Si','O'])
 r, hist = histogram(atoms,dr)
 
-fig = plt.figure(figsize=(12, 5)) 
+fig = plt.figure(figsize=(12, 4)) 
 for i in range(3):
     ax = fig.add_subplot(1, 3, i+1)
     ax.bar(r, hist.T[i], width=dr*0.8, label=atoms.pairs[i])
     ax.set_xlim(0.0,5.0)
     ax.set_ylim(0,500)
+    ax.set_xlabel('r(Å)')
+    ax.set_ylabel('Number')
     ax.legend()
+plt.subplots_adjust(wspace=0.3)
 plt.show()
 
 # calculate g(r)
@@ -61,39 +64,49 @@ _Nr = Nr(r,_Tr)
 # show graph
 fig = plt.figure(figsize=(18, 8)) 
 ax = fig.add_subplot(2, 4, 1)
-ax.set_title('Partial g(r)')
 for i in range(3):    
     ax.plot(r, gr.T[i], label=atoms.pairs[i])
+    ax.set_xlabel('r(Å)')
+    ax.set_ylabel('Partial g(r)')
     ax.legend()
 
 ax = fig.add_subplot(2, 4, 2)
-ax.set_title('Total g(r)')
+ax.set_xlabel('r(Å)')
+ax.set_ylabel('Total g(r)')
 ax.plot(r,total_gr)
 
 ax = fig.add_subplot(2, 4, 3)
-ax.set_title('Partial S(Q)')
 for i in range(3):    
     ax.plot(q, sq.T[i], label=atoms.pairs[i])
+    ax.set_xlabel('Q(Å^-1)')
+    ax.set_ylabel('Partial S(Q)')
     ax.legend()
 
 ax = fig.add_subplot(2, 4, 4)
-ax.set_title('Total Neutron S(Q)')
+ax.set_xlabel('Q(Å^-1)')
+ax.set_ylabel('Total Neutron S(Q)')
 ax.plot(q, total_sq)
 
 ax = fig.add_subplot(2, 4, 5)
-ax.set_title('Total X-ray S(Q)')
+ax.set_xlabel('Q(Å^-1)')
+ax.set_ylabel('Total X-ray S(Q)')
 ax.plot(q, total_fq)
 
 ax = fig.add_subplot(2, 4, 6)
-ax.set_title('G(r)')
+ax.set_xlabel('r(Å)')
+ax.set_ylabel('G(r)')
 ax.plot(r, _Gr)
 
 ax = fig.add_subplot(2, 4, 7)
-ax.set_title('T(r)')
+ax.set_xlabel('r(Å)')
+ax.set_ylabel('T(r)')
 ax.plot(r, _Tr)
 
 ax = fig.add_subplot(2, 4, 8)
+ax.set_xlabel('r(Å)')
 ax.set_title('N(r)')
 ax.plot(r, _Nr)
 
+plt.subplots_adjust(wspace=0.3)
+plt.subplots_adjust(hspace=0.3)
 plt.show()

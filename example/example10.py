@@ -25,5 +25,7 @@ y, x = np.histogram(values, bins=20, range=[0.9,1.1])
 plt.bar((x[:-1]+x[1:])*0.5, y, width=0.8*(x[1]-x[0]))
 plt.xlim(0.9,1.1)
 plt.ylim(0, None)
+plt.xlabel('q')
+plt.ylabel('number')
 plt.show()
 

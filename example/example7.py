@@ -24,8 +24,12 @@ for i, trio in enumerate(atoms.trios):
     ax = fig.add_subplot(2, 3, i+1)
     ax.bar(angle, hist[i], width=w*0.8, label=trio)
     ax.set_xlim(0.0,180.0)
-    #ax.set_ylim(0,800)
+    ax.set_ylim(0,1.0)
+    ax.set_xlabel('angle')
+    ax.set_ylabel('distribution')
     ax.legend()
+plt.subplots_adjust(wspace=0.3)
+plt.subplots_adjust(hspace=0.3)
 plt.show()
 
 print('Output from TRIPLETS - bond angle correlations')
