@@ -25,7 +25,7 @@ class sova_install(install):
           path = os.path.join(os.path.dirname(__file__), 'make.bat')
           subprocess.Popen(path)
       else:
-          os.system("./make.sh")
+          os.system("bash make.sh")
 
   def run(self): 
       self._pre_install()
@@ -43,6 +43,11 @@ setup(
         'ase==3.22.1',
         'matplotlib',
         'h5py',
+        'networkx==3.1',
+        'numba',
+        'tqdm',
+        'spglib',
+        'PyCifRW',
     ],
     author='Tohoku Univ.',
     author_email='motoki.shiga.b4@tohoku.ac.jp',
