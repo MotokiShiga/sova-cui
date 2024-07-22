@@ -6,7 +6,9 @@ import time, itertools, os, shutil, pickle, multiprocessing
 import numba as nb
 import networkx as nx
 from ..core.gridding import Grid
+from functools import partial
 from tqdm import tqdm
+from functools import partial
 #from tqdm.notebook import tqdm
 
 try:
@@ -323,6 +325,78 @@ def enumerate_guttman_ring(atoms_extracted, atoms_all, chemical_bond_index):
         
     return set_rings
 
+def sub_parallel_enumerate_guttman_ring(i, atoms_extracted, G, chemical_bond_index):
+    #print(f'process {i} done!')
+
+    set_rings = set()
+        
+    n0 = chemical_bond_index[i,0]
+    n1 = chemical_bond_index[i,1]
+    if (n0 in atoms_extracted)|(n1 in atoms_extracted):
+        G.remove_edge(n0, n1)
+        try:
+            for path in nx.all_shortest_paths(G, source=n0, target=n1):
+                path = np.array(path)
+                i_min = np.argmin(path)
+                path = tuple(np.r_[path[i_min:],path[:i_min]])
+                # to aline the orientation
+                if path[-1]<path[1]:
+                    path = path[::-1]
+                    path = tuple(np.r_[path[-1],path[:-1]])
+                set_rings.add(path)
+        except nx.NetworkXNoPath:
+            pass #Nothing to do
+        G.add_edge(n0, n1)
+        
+    return set_rings
+
+from concurrent.futures import ThreadPoolExecutor
+
+def parallel_enumerate_guttman_ring(atoms_extracted, atoms_all, chemical_bond_index, num_parallel=-1):
+
+    # the number of processes in parallel computation
+    if num_parallel > os.cpu_count():
+        num_parallel = os.cpu_count()-2
+    elif num_parallel == -1:
+        num_parallel = os.cpu_count()-2
+    
+    index_bonds = np.arange(chemical_bond_index.shape[0])
+    #list_index_bonds = np.array_split(index_bonds, num_parallel)
+        
+    # initialize graph object
+    G = nx.Graph()
+    G.add_nodes_from(atoms_all)
+    G.add_edges_from(chemical_bond_index)
+    
+    # make function with fixed parameters
+    fun_enum_rings = partial(sub_parallel_enumerate_guttman_ring, atoms_extracted=atoms_extracted, G=G, chemical_bond_index=chemical_bond_index) 
+        
+    with ThreadPoolExecutor() as executor:
+        set_rings_all = set()
+        procs = []
+        for n in index_bonds:
+            proc = executor.submit(fun_enum_rings, n)            
+            procs.append(proc)        
+        executor.shutdown(wait=True)
+        
+        for p in procs:
+            s= p.result()            
+            if len(s)>0:
+                for ss in list(s):
+                    set_rings_all.add(ss)
+    
+    print(set_rings_all)
+    
+    #with multiprocessing.Pool(processes=num_parallel) as pool:
+    #    set_rings_all = set() # set to store enumerated rings
+    #    set_rings = pool.map(fun_enum_rings, list_index_bonds)
+    #    for s in set_rings:
+    #        if len(s)>0:
+    #            for ss in list(s):
+    #                set_rings_all.add(ss)    
+    
+    return set_rings_all
+    
 class Molecule:
     """Load information of an atomic configuration
     
@@ -556,11 +630,9 @@ class RINGs(Molecule):
         self.atom_symbols = np.array(self.atoms.elements)
         self.rings = []
             
-    def calculate(self, ring_type, pair_atom_symbols,  p_pair=0.3,
-                  cutoff_size=24, atoms_extracted=None, chain=False):
-        
-        num_parallel = 0
-        
+    def calculate(self, ring_type, pair_atom_symbols, p_pair=0.3,
+                  cutoff_size=24, num_parallel=0, atoms_extracted=None, chain=False):
+                
         index_atoms = []
         #print(self.atoms.bonds)
         for index, neighs in enumerate(self.atoms.bonds):
@@ -629,9 +701,9 @@ class RINGs(Molecule):
         #         flag_primitive=False, num_parallel=num_parallel)
         elif (ring_type == RINGs.RingType.GUTTMAN)&(num_parallel==0):
             set_rings = enumerate_guttman_ring(atoms_extracted, atoms_all,self.chemical_bond_index_atoms)
-        # elif (ring_type=='Guttman')&(num_parallel!=0):
-        #     set_rings = parallel_enumerate_guttman_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms, \
-        #         num_parallel=num_parallel)
+        elif (ring_type == RINGs.RingType.GUTTMAN)&(num_parallel != 0):
+            set_rings = parallel_enumerate_guttman_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms, 
+                                                        num_parallel=num_parallel)
         else:
             print('The indicated ring type is incorrect.')
             print('Choose a fring tyep from Primitive, King, Primitive_King, and Guttman.') 
