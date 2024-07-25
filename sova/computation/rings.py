@@ -3,12 +3,15 @@ from numpy import linalg
 from scipy import stats
 # from scipy.stats import gaussian_kde
 import time, itertools, os, shutil, pickle, multiprocessing
+from concurrent.futures import ThreadPoolExecutor
+from concurrent import futures
 import numba as nb
 import networkx as nx
 from ..core.gridding import Grid
 from functools import partial
 from tqdm import tqdm
 from functools import partial
+import copy
 #from tqdm.notebook import tqdm
 
 try:
@@ -45,6 +48,156 @@ def set_output_callbacks(progress_func, finished_func):
     _progress = progress_func
     _finish = finished_func
 '''    
+
+def sub_parallel_enumerate_primitive_ring(n_source, G, D, cutoff_size):
+    set_rings=set()
+        
+    # print(n_source,flush=True)
+    length = D[n_source]
+    for L in range(1,round(cutoff_size/2)+1):
+        i = np.array(list(length.values()))==L
+        node_check = np.array(list(length.keys()))[i]
+        
+        # rings with even number of nodes
+        for n_target in node_check:
+            paths = [p for p in nx.all_shortest_paths(G,source=n_source,target=n_target)]
+            if (len(paths)>1):
+                #enumerate pairs of paths
+                for p0, p1 in itertools.combinations(paths,2):
+                    if len(set(p0)&set(p1))==2: #common nodes are only n_source and n_target
+
+                        flag = True
+                        set_node = p0 + p1[-2:0:-1]
+                        num_ring_tmp = len(set_node)
+                        dic_id_v = dict()
+                        for n_tmp, v_tmp in enumerate(set_node):
+                            dic_id_v[v_tmp] = n_tmp
+
+                        for ni,nj in  itertools.combinations(set_node,2):
+                            i_ni, i_nj = dic_id_v[ni], dic_id_v[nj]
+                            if i_ni<i_nj:
+                                dist_ring_tmp = min([i_nj - i_ni, i_ni + num_ring_tmp - i_nj]) 
+                            else:
+                                dist_ring_tmp = min([i_ni - i_nj, i_nj + num_ring_tmp - i_ni])
+                            if D[ni][nj] < dist_ring_tmp:
+                                flag=False
+                                break
+
+                        if flag:
+                            # to arrange order
+                            path = p0 + p1[-2:0:-1]
+                            path = np.array(path)
+                            i_min = np.argmin(path)
+                            path = tuple(np.r_[path[i_min:],path[:i_min]])
+                            # to aline the orientation
+                            if path[-1]<path[1]:
+                                path = path[::-1]
+                                path = tuple(np.r_[path[-1],path[:-1]])
+                            set_rings.add(path)
+
+        # rings with odd number of nodes
+        for nt0, nt1 in itertools.combinations(node_check,2):
+            if nt0 in G.neighbors(nt1): # if nt0 and nt1 are linked
+                paths0 = [p for p in nx.all_shortest_paths(G,source=n_source,target=nt0)]
+                paths1 = [p for p in nx.all_shortest_paths(G,source=n_source,target=nt1)]
+                for p0,p1 in itertools.product(paths0, paths1):
+                    if len(set(p0)&set(p1))==1: #common nodes are only n_source and n_target
+
+                        flag = True
+                        set_node = p0 + p1[-2:0:-1]
+                        num_ring_tmp = len(set_node)
+                        dic_id_v = dict()
+                        for n_tmp, v_tmp in enumerate(set_node):
+                            dic_id_v[v_tmp] = n_tmp
+
+                        for ni,nj in  itertools.combinations(set_node,2):
+                            i_ni, i_nj = dic_id_v[ni], dic_id_v[nj]
+                            if i_ni<i_nj:
+                                dist_ring_tmp = min([i_nj - i_ni, i_ni + num_ring_tmp - i_nj]) 
+                            else:
+                                dist_ring_tmp = min([i_ni - i_nj, i_nj + num_ring_tmp - i_ni])
+                            if D[ni][nj] < dist_ring_tmp:
+                                flag=False
+                                break
+
+                        if flag:
+                            # to arrange order
+                            path = p0 + p1[-1:0:-1]
+                            path = np.array(path)
+                            i_min = np.argmin(path)
+                            path = tuple(np.r_[path[i_min:],path[:i_min]])
+                            # to aline the orientation
+                            if path[-1]<path[1]:
+                                path = path[::-1]
+                                path = tuple(np.r_[path[-1],path[:-1]])
+                            if path in set_rings:
+                                pass
+                            else:
+                                set_rings.add(path)
+    return set_rings
+
+def parallel_enumerate_primitive_ring(atoms_extracted, atoms_all, chemical_bond_index, cutoff_size, num_parallel=-1):
+    """Enumerate primitive rings
+    
+    Parameters
+    ----------
+    num_atoms : int
+        the number of atoms
+    chemical_bond_index : list
+        the list of atom pairs with bonded
+    cutoff_size : int
+        the maximum number of atoms in enumerated rings
+    num_parallel : int, optional
+        the number of parallel numbers, by default -1
+        When -1, the maximum number of cores (os.cpu_count-2) is set. 
+    
+    Returns
+    -------
+    set_rings_all: set (list of int)
+        the enumerated primitive rings
+    """
+
+    # the number of processes in parallel computation
+    if num_parallel > os.cpu_count():
+        num_parallel = os.cpu_count()-2
+    elif num_parallel == -1:
+        num_parallel = os.cpu_count()-2
+
+    list_nodes = np.array_split(atoms_extracted, num_parallel)
+    
+    # initialize graph object
+    G=nx.Graph()
+    G.add_nodes_from(atoms_all)
+    G.add_edges_from(chemical_bond_index)
+    D = dict(nx.all_pairs_shortest_path_length(G, cutoff=round(cutoff_size/2)+1))
+
+    # make function with fixed parameters
+    fun_enum_rings = partial(sub_parallel_enumerate_primitive_ring, G=G, D=D, cutoff_size=cutoff_size) 
+    
+    num = len(atoms_extracted)
+    
+    with tqdm(total=num) as progress_bar:
+        
+        with ThreadPoolExecutor() as executor:
+            
+            set_rings_all = set()
+            procs = []
+            for n in atoms_extracted:
+                proc = executor.submit(fun_enum_rings, n)            
+                procs.append(proc)
+                
+            for f in futures.as_completed(procs):
+                progress_bar.update(1)
+                                
+            executor.shutdown(wait=True)
+            
+            for p in procs:
+                s= p.result()            
+                if len(s)>0:
+                    for ss in list(s):
+                        set_rings_all.add(ss)
+    
+    return set_rings_all
 
 def enumerate_primitive_ring(atoms_extracted, atoms_all, chemical_bond_index, cutoff_size):
     """Enumerate primitive rings
@@ -187,6 +340,121 @@ def enumerate_primitive_ring(atoms_extracted, atoms_all, chemical_bond_index, cu
     
     return set_rings
 
+def sub_parallel_enumerate_king_ring(n, G, flag_primitive):
+    set_rings = set()    
+    _G = copy.deepcopy(G)
+    
+    neighbors = list(nx.all_neighbors(_G, n))
+    if len(neighbors)>=2:
+        for n0 in neighbors:
+            if has_igraph:
+                ei = _G.get_eid(n, n0)
+                _G.delete_edges(ei)
+            else:
+                _G.remove_edge(n, n0)
+        combinations = list(itertools.combinations(neighbors,2))
+        for comb in combinations:
+            n0 = comb[0]
+            n1 = comb[1]
+            try:
+                if has_igraph:
+                    paths = _G.get_all_shortest_paths(n0, n1)
+                else:
+                    paths = nx.all_shortest_paths(_G, source=n0, target=n1)
+                for path in paths:
+                    path.append(n)
+                    path = np.array(path)
+                    i_min = np.argmin(path)
+                    path = tuple(np.r_[path[i_min:],path[:i_min]])
+                    # to aline the orientation
+                    if path[-1]<path[1]:
+                        path = path[::-1]
+                        path = tuple(np.r_[path[-1],path[:-1]])
+                    set_rings.add(path)
+            except nx.NetworkXNoPath:
+                pass #Nothing to do
+        for n0 in neighbors:
+            if has_igraph:
+                _G.add_edges([(n, n0)])
+            else:
+                _G.add_edge(n, n0)        
+    
+    if not(flag_primitive):        
+        return set_rings
+    else:
+        # remove NON-primitive rings, which have at least one shortcut
+        set_primitive_rings = set()
+        for path in set_rings:
+            G_ring=nx.Graph()
+            nx.add_cycle(G_ring, path)
+            combinations = list(itertools.combinations(path,2))
+            flag_primitive = True
+            for comb in combinations:
+                n0, n1 = comb[0], comb[1]
+                l_ring = nx.shortest_path_length(G_ring, source=n0, target=n1)
+                l_ori = nx.shortest_path_length(_G, source=n0, target=n1)
+                if l_ori<l_ring:
+                    flag_primitive = False
+                    break
+            if flag_primitive:
+                set_primitive_rings.add(tuple(path))        
+        return set_primitive_rings
+
+def parallel_enumerate_king_ring(atoms_extracted, atoms_all, chemical_bond_index, flag_primitive, num_parallel=-1):
+
+    # the number of processes in parallel computation
+    if num_parallel > os.cpu_count():
+        num_parallel = os.cpu_count()-2
+    elif num_parallel == -1:
+        num_parallel = os.cpu_count()-2
+
+    #list_nodes = np.array_split(atoms_extracted, num_parallel)
+    num = len(atoms_extracted)
+
+    # initialize graph object
+    if has_igraph:        
+        G = ig.Graph()
+        G.add_vertices(len(atoms_all))
+        G.add_edges(chemical_bond_index)
+    else:
+        G = nx.Graph()
+        G.add_nodes_from(atoms_all)
+        G.add_edges_from(chemical_bond_index)
+
+    # make function with fixed parameters
+    fun_enum_rings = partial(sub_parallel_enumerate_king_ring, G=G, flag_primitive=flag_primitive) 
+    
+    with tqdm(total=num) as progress_bar:
+        
+        with ThreadPoolExecutor() as executor:
+            #progress_bar = tqdm(total = num)
+            set_rings_all = set()
+            procs = []
+            for n in atoms_extracted:
+                proc = executor.submit(fun_enum_rings, n)            
+                procs.append(proc)
+                
+            for f in futures.as_completed(procs):
+                progress_bar.update(1)
+                                
+            executor.shutdown(wait=True)
+            
+            for p in procs:
+                s= p.result()            
+                if len(s)>0:
+                    for ss in list(s):
+                        set_rings_all.add(ss)
+    
+    #with multiprocessing.Pool(processes=num_parallel) as pool:
+    #    set_rings_all = set() # set to store enumerated rings
+    #    set_rings = pool.map(fun_enum_rings, list_nodes)
+    #    for s in set_rings:
+    #        if len(s)>0:
+    #            for ss in list(s):
+    #                set_rings_all.add(ss)
+    
+    return set_rings_all
+
 def enumerate_king_ring(atoms_extracted, atoms_all, chemical_bond_index, flag_primitive):
     """enumerate King's rings and their primitive rings
     """
@@ -267,6 +535,94 @@ def enumerate_king_ring(atoms_extracted, atoms_all, chemical_bond_index, flag_pr
         #finish()
         return set_primitive_rings
 
+def sub_parallel_enumerate_guttman_ring(i, atoms_extracted, G, chemical_bond_index):
+    #print(f'process {i} done!')
+    import copy
+    
+    _G = copy.deepcopy(G)
+    
+    set_rings = set()
+        
+    n0 = chemical_bond_index[i,0]
+    n1 = chemical_bond_index[i,1]
+    if (n0 in atoms_extracted)|(n1 in atoms_extracted):            
+        if has_igraph:
+            ei = _G.get_eid(n0, n1)
+            _G.delete_edges(ei)
+        else:
+            _G.remove_edge(n0, n1)
+        try:
+            if has_igraph:
+                paths = _G.get_all_shortest_paths(n0, n1)
+            else:
+                paths = nx.all_shortest_paths(_G, source=n0, target=n1)                    
+            for path in paths:
+                path = np.array(path)
+                i_min = np.argmin(path)
+                path = tuple(np.r_[path[i_min:],path[:i_min]])
+                # to aline the orientation
+                if path[-1] < path[1]:
+                    path = path[::-1]
+                    path = tuple(np.r_[path[-1],path[:-1]])
+                set_rings.add(path)
+                                
+        except nx.NetworkXNoPath:
+            pass #Nothing to do
+        if has_igraph:
+            _G.add_edges([(n0, n1)])
+        else:
+            _G.add_edge(n0, n1)
+        
+    return set_rings
+
+def parallel_enumerate_guttman_ring(atoms_extracted, atoms_all, chemical_bond_index, num_parallel=-1):
+
+    # the number of processes in parallel computation
+    if num_parallel > os.cpu_count():
+        num_parallel = os.cpu_count()-2
+    elif num_parallel == -1:
+        num_parallel = os.cpu_count()-2
+    
+    index_bonds = np.arange(chemical_bond_index.shape[0])
+    #list_index_bonds = np.array_split(index_bonds, num_parallel)    
+    
+    # initialize graph object
+    if has_igraph:
+        G = ig.Graph()
+        G.add_vertices(len(atoms_all))
+        G.add_edges(chemical_bond_index)
+    else:
+        G = nx.Graph()
+        G.add_nodes_from(atoms_all)
+        G.add_edges_from(chemical_bond_index)
+            
+    # make function with fixed parameters
+    fun_enum_rings = partial(sub_parallel_enumerate_guttman_ring, atoms_extracted=atoms_extracted, G=G, chemical_bond_index=chemical_bond_index) 
+    num = chemical_bond_index.shape[0]
+    
+    with tqdm(total=num) as progress_bar:
+        
+        with ThreadPoolExecutor(max_workers=num_parallel) as executor:
+            #progress_bar = tqdm(total = num)
+            set_rings_all = set()
+            procs = []
+            for n in index_bonds:
+                proc = executor.submit(fun_enum_rings, n)            
+                procs.append(proc)
+                
+            for f in futures.as_completed(procs):
+                progress_bar.update(1)
+                                
+            executor.shutdown(wait=True)
+            
+            for p in procs:
+                s= p.result()            
+                if len(s)>0:
+                    for ss in list(s):
+                        set_rings_all.add(ss)
+    
+    return set_rings_all
+
 def enumerate_guttman_ring(atoms_extracted, atoms_all, chemical_bond_index):
     """enumerate Guttman's rings and their primitive rings
     """    
@@ -324,78 +680,6 @@ def enumerate_guttman_ring(atoms_extracted, atoms_all, chemical_bond_index):
         progress_bar.update()
         
     return set_rings
-
-def sub_parallel_enumerate_guttman_ring(i, atoms_extracted, G, chemical_bond_index):
-    #print(f'process {i} done!')
-
-    set_rings = set()
-        
-    n0 = chemical_bond_index[i,0]
-    n1 = chemical_bond_index[i,1]
-    if (n0 in atoms_extracted)|(n1 in atoms_extracted):
-        G.remove_edge(n0, n1)
-        try:
-            for path in nx.all_shortest_paths(G, source=n0, target=n1):
-                path = np.array(path)
-                i_min = np.argmin(path)
-                path = tuple(np.r_[path[i_min:],path[:i_min]])
-                # to aline the orientation
-                if path[-1]<path[1]:
-                    path = path[::-1]
-                    path = tuple(np.r_[path[-1],path[:-1]])
-                set_rings.add(path)
-        except nx.NetworkXNoPath:
-            pass #Nothing to do
-        G.add_edge(n0, n1)
-        
-    return set_rings
-
-from concurrent.futures import ThreadPoolExecutor
-
-def parallel_enumerate_guttman_ring(atoms_extracted, atoms_all, chemical_bond_index, num_parallel=-1):
-
-    # the number of processes in parallel computation
-    if num_parallel > os.cpu_count():
-        num_parallel = os.cpu_count()-2
-    elif num_parallel == -1:
-        num_parallel = os.cpu_count()-2
-    
-    index_bonds = np.arange(chemical_bond_index.shape[0])
-    #list_index_bonds = np.array_split(index_bonds, num_parallel)
-        
-    # initialize graph object
-    G = nx.Graph()
-    G.add_nodes_from(atoms_all)
-    G.add_edges_from(chemical_bond_index)
-    
-    # make function with fixed parameters
-    fun_enum_rings = partial(sub_parallel_enumerate_guttman_ring, atoms_extracted=atoms_extracted, G=G, chemical_bond_index=chemical_bond_index) 
-        
-    with ThreadPoolExecutor() as executor:
-        set_rings_all = set()
-        procs = []
-        for n in index_bonds:
-            proc = executor.submit(fun_enum_rings, n)            
-            procs.append(proc)        
-        executor.shutdown(wait=True)
-        
-        for p in procs:
-            s= p.result()            
-            if len(s)>0:
-                for ss in list(s):
-                    set_rings_all.add(ss)
-    
-    print(set_rings_all)
-    
-    #with multiprocessing.Pool(processes=num_parallel) as pool:
-    #    set_rings_all = set() # set to store enumerated rings
-    #    set_rings = pool.map(fun_enum_rings, list_index_bonds)
-    #    for s in set_rings:
-    #        if len(s)>0:
-    #            for ss in list(s):
-    #                set_rings_all.add(ss)    
-    
-    return set_rings_all
     
 class Molecule:
     """Load information of an atomic configuration
@@ -684,22 +968,22 @@ class RINGs(Molecule):
             atoms_extracted = atoms_all        
                 
         flag_type = True
-        if (ring_type == RINGs.RingType.PRIMITIVE)&(num_parallel==0):            
+        if (ring_type == RINGs.RingType.PRIMITIVE)&(num_parallel == 0):            
             set_rings = enumerate_primitive_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms, cutoff_size)
-        # elif (ring_type=='Primitive')&(num_parallel!=0):
-        #     set_rings = parallel_enumerate_primitive_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms,\
-        #         cutoff_size, num_parallel=num_parallel)
-        elif (ring_type == RINGs.RingType.PRIMITIVE_KING)&(num_parallel==0):
+        elif (ring_type == RINGs.RingType.PRIMITIVE)&(num_parallel != 0):
+            set_rings = parallel_enumerate_primitive_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms, 
+                                                          cutoff_size, num_parallel=num_parallel)
+        elif (ring_type == RINGs.RingType.PRIMITIVE_KING)&(num_parallel == 0):
             set_rings = enumerate_king_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms, flag_primitive=True)
         # elif (ring_type=='Primitive_King')&(num_parallel!=0):
         #     set_rings = parallel_enumerate_king_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms,\
         #         flag_primitive=True, num_parallel=num_parallel)
-        elif (ring_type == RINGs.RingType.KING)&(num_parallel==0):
+        elif (ring_type == RINGs.RingType.KING)&(num_parallel == 0):
             set_rings = enumerate_king_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms, flag_primitive=False)
-        # elif (ring_type=='King')&(num_parallel!=0):
-        #     set_rings = parallel_enumerate_king_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms, \
-        #         flag_primitive=False, num_parallel=num_parallel)
-        elif (ring_type == RINGs.RingType.GUTTMAN)&(num_parallel==0):
+        elif (ring_type == RINGs.RingType.KING)&(num_parallel != 0):
+            set_rings = parallel_enumerate_king_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms, \
+                 flag_primitive=False, num_parallel=num_parallel)
+        elif (ring_type == RINGs.RingType.GUTTMAN)&(num_parallel == 0):
             set_rings = enumerate_guttman_ring(atoms_extracted, atoms_all,self.chemical_bond_index_atoms)
         elif (ring_type == RINGs.RingType.GUTTMAN)&(num_parallel != 0):
             set_rings = parallel_enumerate_guttman_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms, 
