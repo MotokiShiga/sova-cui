@@ -38,9 +38,9 @@ setup(
     name='sova',
     version='0.1.0',
     install_requires=[
-        'numpy==1.23.5',
-        'scipy==1.8.1',
-        'ase==3.22.1',
+        'ase',
+        'numpy',
+        'scipy',
         'matplotlib',
         'h5py',
         'networkx==3.1',
