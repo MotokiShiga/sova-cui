@@ -47,10 +47,10 @@ The versions of other packages can be found in the setup.py file.
 
 ## Acknowledgements
 
-Support for SOVA has been provided by the following organizations:
+Support for SOVA has been provided by the following package:
 
-- pyMolDyn(https://pgi-jcns.fz-juelich.de/portal/pages/pymoldyn-main.html)
-- cif2cell(https://sourceforge.net/projects/cif2cell/)
+- [pyMolDyn](https://pgi-jcns.fz-juelich.de/portal/pages/pymoldyn-main.html)
+- [cif2cell](https://sourceforge.net/projects/cif2cell/)
 
 ## Usage
 
