@@ -27,7 +27,24 @@
   # Jupyter notebook
   Please execute the files located in the 'example_jypyter' folder.
   ```    
+
+## package
+
+<!-- framework & version -->
+
+| framework  | version |
+| --------------------- | ---------- |
+| Python                | 3.10.0     |
+| numpy                | 1.23.5      |
+| scipy | 1.8.1    |
+| ase                 | 3.23.0     |
+| h5py              | 3.7.0    |
+| networkx                 | 3.1     |
+| spglib               | 2.0.2     |
+| PyCifRW             | 4.4.5      |
   
+The versions of other packages can be found in the setup.py file.
+
 ## Usage
 
 Basic usage:
