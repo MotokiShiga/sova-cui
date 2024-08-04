@@ -46,11 +46,11 @@ print(rings[n].over_boundary)
 
 print("Does the ring is closed in the real space?")
 print(rings[n].close)
-# If there are many rings whose outputs are True, the cell size is too small. 
-# For cif data, the supercell structure can be generated using ase package
-# using the following code:
-#
 """
+ If there are many rings whose outputs are True, the cell size is too small. 
+ For cif data, the supercell structure can be generated using ase package
+ using the following code:
+
 from ase.io import read, write
 
 struct = read(structure_file)
