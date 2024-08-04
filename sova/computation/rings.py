@@ -975,9 +975,6 @@ class RINGs(Molecule):
                                                           cutoff_size, num_parallel=num_parallel)
         elif (ring_type == RINGs.RingType.PRIMITIVE_KING)&(num_parallel == 0):
             set_rings = enumerate_king_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms, flag_primitive=True)
-        # elif (ring_type=='Primitive_King')&(num_parallel!=0):
-        #     set_rings = parallel_enumerate_king_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms,\
-        #         flag_primitive=True, num_parallel=num_parallel)
         elif (ring_type == RINGs.RingType.KING)&(num_parallel == 0):
             set_rings = enumerate_king_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms, flag_primitive=False)
         elif (ring_type == RINGs.RingType.KING)&(num_parallel != 0):

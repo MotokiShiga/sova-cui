@@ -2,7 +2,7 @@
 
 
 
-# Installation and Run
+# Installation
 1. Clone the SOVA repo
 
   ```sh
@@ -15,20 +15,13 @@
   pip install sova
   
   # Option 2: install from source
-  To enable verbose mode, use the -v option.
+  # To enable verbose mode, use the -v option.
   pip install [-v] .
   ```
-3. Run
-  ```sh
-  # Console
-  > cd example
-  > python example1.py
-  
-  # Jupyter notebook
-  Please execute the files located in the 'example_jypyter' folder.
-  ```    
 
-## package
+For the usage, see example codes in the directory 'examples'.
+
+## Requirements
 
 <!-- framework & version -->
 
@@ -47,7 +40,7 @@ The versions of other packages can be found in the setup.py file.
 
 ## Acknowledgements
 
-Support for SOVA has been provided by the following package:
+SOVA reuses source codes of the following package:
 
 - [pyMolDyn](https://github.com/sciapp/pyMolDyn)
 - [cif2cell](https://pypi.org/project/cif2cell/#description)
