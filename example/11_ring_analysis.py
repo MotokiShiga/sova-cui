@@ -23,6 +23,14 @@ ring = RINGs(atoms)
 rings = ring.calculate(ring_type=RINGs.RingType.GUTTMAN, 
                        pair_atom_symbols=[['Si', 'O']])
 
+"""
+Parallel computation is available using num_parallel option as follows:
+rings = ring.calculate(ring_type=RINGs.RingType.GUTTMAN, 
+                       pair_atom_symbols=[['Si', 'O']], num_parallel=8)
+
+To use the maximum numbers of CPU cores, set -1.
+"""
+
 # Computed result
 print("The number of rings in the structure : %i" % len(rings))
 
