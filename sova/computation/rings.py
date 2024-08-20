@@ -1,11 +1,8 @@
 import numpy as np
 from numpy import linalg
-from scipy import stats
-# from scipy.stats import gaussian_kde
 import time, itertools, os, shutil, pickle, multiprocessing
 from concurrent.futures import ThreadPoolExecutor
 from concurrent import futures
-import numba as nb
 import networkx as nx
 from ..core.gridding import Grid
 from functools import partial

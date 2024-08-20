@@ -33,6 +33,7 @@ For the usage, see example codes in the directory 'examples'.
 | ase                 | 3.23.0     |
 | h5py              | 3.7.0    |
 | networkx                 | 3.1     |
+| igraph                 | 0.11.3     |
 | spglib               | 2.0.2     |
 | PyCifRW             | 4.4.5      |
   
