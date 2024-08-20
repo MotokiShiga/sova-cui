@@ -2,23 +2,39 @@
 """
 Created on Fri May  3 09:13:22 2024
 
-@author: H. Morita
+@author: H. Morita and M. Shiga
 """
 
 from sova.core.file import File
 from sova.computation.structure_factor import (histogram,gr,total_gr,SQ,total_SQ,total_FQ,
-                                               ncoeff,xcoeff,Gr,Tr,Nr)
+                                    ncoeff,xcoeff,Gr,Tr,Nr)
 import matplotlib.pyplot as plt
 
-path = "../data/amorphous_md/a_SiO2_speed1e11K_rand.xyz"
-f = File.open(path)
+
+# Load structural information from a xyz file
+# The second line (CUB 24.713) in the xyz file indicates the shape of cell and its length.
+# (CUB means cubics.)
+structure_file = "./data/amorphous_md/a_SiO2_speed1e11K_rand.xyz"
+f = File.open(structure_file)
+
+# Get atomic and cell (simulation box) data
 atoms = f.getatoms()
-dr = 0.05
 
-# calculate histogram
-#_, hist = histogram(atoms,dr,symbols=['Si','O'])
-r, hist = histogram(atoms,dr)
+print("Atom symbols:", atoms.symbols)
 
+print("Is the periodicity information of the cell available?:")
+print(atoms.volume.periodic)
+# SOVA requires the periodicity information to compute PDF functions.
+# Only histograms of distances between atom pairs can be computed without it.
+
+
+# Histograms of distances between atom pairs
+dr = 0.05   # bin width 
+r, hist = histogram(atoms,dr) # calculate histograms
+# Input symbols option to determine plot order of atoms 
+#r, hist = histogram(atoms,dr,symbols=['Si','O'])
+
+# Plot histograms of pair distance
 fig = plt.figure(figsize=(12, 4)) 
 for i in range(3):
     ax = fig.add_subplot(1, 3, i+1)
@@ -31,37 +47,40 @@ for i in range(3):
 plt.subplots_adjust(wspace=0.3)
 plt.show()
 
-# calculate g(r)
+
+# Calculate PDF functions
+# Calculate g(r)
 r, gr = gr(atoms,hist,dr)
 
-# calculate Total g(r)
+# Calculate Total g(r)
 coeff = ncoeff(atoms.symbols,atoms.frac)
 total_gr = total_gr(gr,coeff)
 
-# calculate S(Q)
+# Calculate S(Q)
 dq = 0.05
 qmin = 0.3
 qmax = 25.0
 q, sq = SQ(atoms,gr,qmin,qmax,dr,dq)
 
-# calculate Total S(Q)
+# Calculate Total S(Q)
 total_sq = total_SQ(sq,coeff)
 
-# calculate F(Q)
+# Calculate F(Q)
 coeff = xcoeff(atoms.symbols,atoms.frac,q)
 total_fq = total_FQ(sq,coeff)
 
-# calculate Gr
+# Calculate Gr
 rho = atoms.rho
 _Gr = Gr(r,total_gr,rho)
 
-# calculate Tr
+# Calculate Tr
 _Tr = Tr(r,total_gr,rho)
 
-# calculate Nr
+# Calculate Nr
 _Nr = Nr(r,_Tr)
 
-# show graph
+
+# Plot functions g(r), total g(r), et al.
 fig = plt.figure(figsize=(18, 8)) 
 ax = fig.add_subplot(2, 4, 1)
 for i in range(3):    
