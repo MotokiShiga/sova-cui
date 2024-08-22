@@ -50,6 +50,18 @@ class CIFFile(InputFile):
             self._info.num_frames += 1
             if self._info.num_frames == 1:                
                 # set angle in radian
+                if cell_data.crystal_system() is not None:
+                    volume_info = 'TRI %f %f %f %f %f %f' % (cell_data.a, cell_data.b, cell_data.c,
+                                                              np.radians(cell_data.alpha), 
+                                                              np.radians(cell_data.beta),
+                                                              np.radians(cell_data.gamma))
+                else:
+                    # TODO raise exception
+                    print('Not found Cell info : cif_file.readinfo', cell_data.crystal_system())
+                    import sys
+                    sys.exit()
+                    
+                """
                 if cell_data.crystal_system() == 'cubic':                                    
                     volume_info = 'CUB %f' % cell_data.a
                 elif cell_data.crystal_system() == 'orthorhombic':
@@ -68,11 +80,7 @@ class CIFFile(InputFile):
                     volume_info = "RHO %f %f" % (cell_data.a, np.radians(cell_data.alpha))
                 elif cell_data.crystal_system() == 'hexagonal':
                     volume_info = 'HEX %f %f' % (cell_data.a, cell_data.c)
-                else:
-                    # TODO raise exception
-                    print('Not found Cell info : cif_file.readinfo', cell_data.crystal_system())
-                    import sys
-                    sys.exit()
+                """                
                 self._info.volumestr = volume_info
             self.inforead = True
         except IOError:

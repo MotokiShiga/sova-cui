@@ -66,7 +66,7 @@ class Grid(object):
         # atoms positions
         self.centres = centres
         self.vectors = vectors
-        self.metric  = vectors * vectors
+        self.metric  = metric(vectors)
         self.truncated = False
         self.nmol = self.centres.shape[0]
         self.grid_size = 30
