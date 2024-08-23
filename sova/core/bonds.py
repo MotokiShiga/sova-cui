@@ -54,12 +54,25 @@ def get_bonds_with_radii(atoms, radii_sum_factor):
             shift_arrays.append(np.array([[0, 0, 0] for _ in bond_target_indices]))
     else:
         dist_max = 0.0
-        for ri, rj in itertools.combinations(atoms.covalence_radii, 2):
-            dist_max = max(dist_max, ri+rj)
+        #for ri, rj in itertools.combinations(atoms.covalence_radii, 2):
+        #    dist_max = max(dist_max, ri+rj)
+        for length in atoms.bond_lengths.values():
+            dist_max = max(dist_max, length)
         grid = atoms.grid
+        bond_matrix = np.identity(len(atoms.elements_kind))
+        for i, elem1 in enumerate(atoms.elements_kind):
+            for j, elem2 in enumerate(atoms.elements_kind):
+                pair = (elem1, elem2)
+                if pair in atoms.bond_lengths.keys():
+                    bond_matrix[i][j] = atoms.bond_lengths[pair]
+                else:
+                    pair = (elem2, elem1)
+                    bond_matrix[i][j] = atoms.bond_lengths[pair]
+        elements_indices = [atoms.elements_kind.index(e) for e in atoms.elements]
         for index in range(atoms.number):
             grid.neighbours(index, dist_max, index+1, atoms.number)
-            delta = (atoms.covalence_radii[grid.inei] + atoms.covalence_radii[index]) * radii_sum_factor
+            #delta = (atoms.covalence_radii[grid.inei] + atoms.covalence_radii[index]) * radii_sum_factor
+            delta = np.array([bond_matrix[elements_indices[index]][elements_indices[j]] for j in grid.inei]) * radii_sum_factor           
             bond_target_indices = np.array(grid.inei)
             indices = (grid.d <= delta).nonzero()[0]
             bond_target_index_arrays.append(bond_target_indices[indices])

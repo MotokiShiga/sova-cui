@@ -496,9 +496,10 @@ class Atoms(object):
         self.indices = None
         self.radii = radii
         self._covalence_radii = None
-        self._covalence_radii_by_element = None
-        self._bonds = None
-        self.lengths = None
+        self._covalence_radii_by_element = None        
+        self._bonds = None        
+        self.bond_lengths = None
+        self.change_bond_lengths = False
         self.shifts = None
         self._colors = None
         self.is_norm = is_norm
@@ -514,6 +515,7 @@ class Atoms(object):
         self.trios = None
         # initialize
         self.symbol_order()
+        self.set_bond_lengths()
     
     def symbol_order(self,symbols=None):
         if symbols is None:
@@ -539,7 +541,6 @@ class Atoms(object):
         if self._covalence_radii is None:
             covalence_radii = np.zeros(self.number, np.float64)
             for i, element in enumerate(self.elements):
-                #element_number = core.elements.numbers[element.upper().decode('utf-8')]
                 element_number = elements.numbers[element.upper()]
                 covalence_radii[i] = elements.radii[element_number]
             self._covalence_radii = covalence_radii
@@ -593,9 +594,10 @@ class Atoms(object):
     
     @property
     def bonds(self):
-        if self._bonds is None:
-            self._bonds = bonds.get_bonds_with_radii(self, 1.15)
+        if self._bonds is None or self.change_bond_lengths == True:
+            self._bonds = bonds.get_bonds_with_radii(self, 1.0)
             #self._bonds = core.bonds.get_bonds_symetric_indicies(self._bonds)                        
+            self.change_bond_lengths = False
         return self._bonds
     
     def bonds_by_dist(self,min_dist,max_dist):
@@ -605,6 +607,43 @@ class Atoms(object):
         self._bonds = bonds.get_bonds_with_element_pair(self, min_dist, max_dist, 1.0)
         return self._bonds
 
+    def set_bond_lengths(self,bond_lengths=None):
+        def set_covalence_bond():
+            self.bond_lengths = {}
+            for pair in self.pairs:
+                elems = pair.split('-')
+                dis = 0.0
+                _pair = (elems[0],elems[1])
+                for element in elems:
+                    element_number = elements.numbers[element.upper()]
+                    covalence_radii = elements.radii[element_number]
+                    dis += covalence_radii
+                self.bond_lengths[_pair] = dis
+        
+        if self.bond_lengths is None:            
+            set_covalence_bond()            
+        else:
+            if bond_lengths is None:                
+                set_covalence_bond()                
+            else:
+                for elems, length in bond_lengths.items():
+                    pair = (elems[0], elems[1])
+                    if pair in self.bond_lengths.keys():
+                        self.bond_lengths[pair] = length
+                    else:
+                        pair = (elems[1], elems[0])
+                        if pair in self.bond_lengths.keys():
+                            self.bond_lengths[pair] = length
+                        else:
+                            print('Not found bond pair : ', elems)
+                        
+                self.change_bond_lengths = True
+    
+    def bond_summary(self):
+        print('bond lengths : ')
+        for pair, length in self.bond_lengths.items():
+            print('{:<2} - {:<2} : {:.2f}'.format(pair[0], pair[1], length))
+            
     @property
     def colors(self):
         if self._colors is None:
