@@ -6,6 +6,8 @@ Created on Wed Oct 12 10:01:02 2022
 """
 
 import numpy as np
+import ase
+
 from .. import data
 from .input_file import InputFile
 from .io_utils import FileError
@@ -111,6 +113,7 @@ class CIFFile(InputFile):
                 self.info.volume.space_group_number = cell_data.spacegroupnr
                 self.info.volume.Hall_symbol = cell_data.HallSymbol
                 self.info.volume.Hermann_Mauguin_symbol = cell_data.HMSymbol                        
+            """
             symbols = []
             positions = []
             transmtx = np.array(cell_data.latticevectors)*cell_data.a
@@ -126,6 +129,11 @@ class CIFFile(InputFile):
                     v = transmtx.T.dot(b.position)                    
                     positions.append(np.array([v[0],v[1],v[2]]))
                     i+=1
+            """
+            atoms_input = ase.io.read(filename=self.path)            
+            symbols = atoms_input.get_chemical_symbols()
+            positions = atoms_input.get_positions()
+            
             self.info.volume.periodic_boundary = [0.0,1.0]
             return data.Atoms(positions, None, symbols, self.info.volume)
             
