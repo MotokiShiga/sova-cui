@@ -59,6 +59,9 @@ def get_bonds_with_radii(atoms, radii_sum_factor):
         for length in atoms.bond_lengths.values():
             dist_max = max(dist_max, length)
         grid = atoms.grid
+        if dist_max > grid.rmax:
+            print("*** Warning : Maximum distance exceeds cell size. Change rmax to cell size {:.2f}".format(grid.rmax))
+            dist_max = grid.rmax
         bond_matrix = np.identity(len(atoms.elements_kind))
         for i, elem1 in enumerate(atoms.elements_kind):
             for j, elem2 in enumerate(atoms.elements_kind):

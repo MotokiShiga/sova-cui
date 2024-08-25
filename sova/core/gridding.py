@@ -54,7 +54,7 @@ def d(vectors, truncated=False):
             (axb1+bxc1-cxa1)**2+(axb2+bxc2-cxa2)**2+(axb3+bxc3-cxa3)**2)
         d4 = 1.5*triprod/math.sqrt( \
             (axb1-bxc1-cxa1)**2+(axb2-bxc2-cxa2)**2+(axb3-bxc3-cxa3)**2)
-        _d = math.min(_d,d1,d2,d3,d4)
+        _d = min(_d,d1,d2,d3,d4)
     
     return _d
     
@@ -66,7 +66,7 @@ class Grid(object):
         # atoms positions
         self.centres = centres
         self.vectors = vectors
-        self.metric  = metric(vectors)
+        self.metric  = metric(self.vectors)
         self.truncated = False
         self.nmol = self.centres.shape[0]
         self.grid_size = 30
@@ -83,14 +83,16 @@ class Grid(object):
             iz = int((self.centres[i][2]+1.0)*self.grid_size/2.0)+1
             ix = min(ix, self.grid_size)
             iy = min(iy, self.grid_size)
-            iz = min(iz, self.grid_size)
+            iz = min(iz, self.grid_size)            
 
             self.grid[ix][iy][iz].append(i)
             self.grid_co[i][0] = ix
             self.grid_co[i][1] = iy
             self.grid_co[i][2] = iz
 
-        self.cell_width = 2.0*d(self.vectors)/self.grid_size
+        dis = d(self.vectors)
+        self.cell_width = 2.0*dis/self.grid_size
+        self.rmax = dis
         
     def update_grid(self, imove, xold, yold, zold, xnew, ynew, znew):
         ix = int((xold+1.0)*self.grid_size/2.0)+1
@@ -127,26 +129,28 @@ class Grid(object):
         self.d = []
         self.shifts = [[] for i in range(3)]
                 
-        neigh = 0
+        #rmax = min(self.rmax, rmax)
+        
+        neigh = 0        
         ng = int(rmax/self.cell_width)+1
         gridx = self.grid_co[ic][0]
         gridy = self.grid_co[ic][1]
         gridz = self.grid_co[ic][2]
         
         for ix in range(gridx-ng, gridx+ng+1):
-            iix = ix
+            iix = ix            
             if (iix <= 0): iix = iix+self.grid_size
-            if (iix > self.grid_size): iix = iix-self.grid_size
-
+            if (iix > self.grid_size): iix = iix-self.grid_size            
+            
             for iy in range(gridy-ng, gridy+ng+1):
                 iiy = iy
                 if (iiy <= 0): iiy = iiy+self.grid_size
-                if (iiy > self.grid_size): iiy = iiy-self.grid_size
+                if (iiy > self.grid_size): iiy = iiy-self.grid_size                
 
                 for iz in range(gridz-ng, gridz+ng+1):
                     iiz = iz
                     if (iiz <= 0): iiz = iiz+self.grid_size
-                    if (iiz > self.grid_size): iiz = iiz-self.grid_size
+                    if (iiz > self.grid_size): iiz = iiz-self.grid_size                    
 
                     for ino in range(len(self.grid[iix][iiy][iiz])):
                         ig = self.grid[iix][iiy][iiz][ino]
@@ -168,22 +172,22 @@ class Grid(object):
                                 y = y-self.sign(1.,y)
                                 z = z-self.sign(1.,z)
                             
-                            dd = self.metric[0][0]*x*x+self.metric[1][1]*y*y+self.metric[2][2]*z*z \
+                            d2 = self.metric[0][0]*x*x+self.metric[1][1]*y*y+self.metric[2][2]*z*z \
                                 + 2.0*(self.metric[0][1]*x*y+self.metric[0][2]*x*z+self.metric[1][2]*y*z)
 
-                            dd = math.sqrt(dd)
-                                
-                            if(dd < rmax):
+                            dis = math.sqrt(d2)
+                            if(dis <= rmax):
+                                if ig in self.inei: continue
                                 neigh = neigh+1
                                 self.inei.append(ig)
                                 self.coords[0].append(x)
                                 self.coords[1].append(y)
                                 self.coords[2].append(z)
-                                self.d.append(dd)
+                                self.d.append(dis)
                                 self.shifts[0].append(shiftx)
                                 self.shifts[1].append(shifty)
                                 self.shifts[2].append(shiftz)
-        
+                
         # Now sort into order
         for i in range(neigh):
             imin = i
