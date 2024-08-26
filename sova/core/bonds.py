@@ -65,12 +65,11 @@ def get_bonds_with_radii(atoms, radii_sum_factor):
         # TODO : Considering whether to expand the cell
         try:        
             if dist_max > grid.rmax:
-                error = "*** Error : "
+                error = "*** Error : Maximum distance exceeds cell size in function bonds.get_bonds_with_radii."
                 raise MaximumRadiusException(error)
                 #dist_max = grid.rmax
         except MaximumRadiusException as e:
             print(e)
-            print("Maximum distance exceeds cell size in function bonds.get_bonds_with_radii.")
             print("Use a supercell structure to ensure that the minimum cell size is exceeds {:.2f}.".format(grid.rmax))
             return
         
