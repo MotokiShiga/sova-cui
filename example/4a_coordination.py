@@ -23,18 +23,21 @@ atoms = f.getatoms()
 bond_lengths = {('Si', 'O') : 2.0, ('Si', 'Si') : -1, ('O', 'O') : -1}
 atoms.set_bond_lengths(bond_lengths)
 
+# Print summary of bond setting
+atoms.bond_summary()
+
 # Indices of Si and O atoms
 ids_si = np.array([i for i, s in enumerate(atoms.elements) if s == 'Si'])
 ids_o = np.array([i for i, s in enumerate(atoms.elements) if s == 'O'])
 
-# list of corrdination numbers
+# List of corrdination numbers
 cnums = np.array([len(b) for b in atoms.bonds])
 
-# lists of coordination numbers around Si and O atoms
+# Lists of coordination numbers around Si and O atoms
 cnums_si = cnums[ids_si]
 cnums_o = cnums[ids_o]
 
-# maxima of coordination numbers
+# Maxima of coordination numbers
 cn_max_si = cnums_si.max()
 cn_max_o  = cnums_o.max()
 
