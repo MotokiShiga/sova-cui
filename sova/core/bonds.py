@@ -34,6 +34,8 @@ def get_bonds_with_constant_delta(atoms, delta):
         bond_target_index_arrays.append(bond_target_indices)
     return bond_target_index_arrays
 
+class MaximumRadiusException(Exception):
+    pass
 
 def get_bonds_with_radii(atoms, radii_sum_factor):
     """
@@ -59,9 +61,17 @@ def get_bonds_with_radii(atoms, radii_sum_factor):
         for length in atoms.bond_lengths.values():
             dist_max = max(dist_max, length)
         grid = atoms.grid
-        if dist_max > grid.rmax:
-            print("*** Warning : Maximum distance exceeds cell size. Change rmax to cell size {:.2f}".format(grid.rmax))
-            dist_max = grid.rmax
+        
+        # TODO : Considering whether to expand the cell
+        try:        
+            if dist_max > grid.rmax:
+                error = "*** Error : Maximum distance exceeds cell size. Change rmax to cell size {:.2f}".format(grid.rmax)
+                raise MaximumRadiusException(error)
+                #dist_max = grid.rmax
+        except MaximumRadiusException as e:
+            print(e)
+            return
+        
         bond_matrix = np.identity(len(atoms.elements_kind))
         for i, elem1 in enumerate(atoms.elements_kind):
             for j, elem2 in enumerate(atoms.elements_kind):

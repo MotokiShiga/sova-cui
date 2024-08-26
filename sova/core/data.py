@@ -635,9 +635,9 @@ class Atoms(object):
                         if pair in self.bond_lengths.keys():
                             self.bond_lengths[pair] = length
                         else:
-                            print('Not found bond pair : ', elems)
-                        
+                            print('Not found bond pair : ', elems)                        
                 self.change_bond_lengths = True
+                self.bonds
     
     def bond_summary(self):
         print('bond lengths : ')
