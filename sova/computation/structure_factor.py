@@ -294,7 +294,7 @@ def xcoeff(symbols, frac, q, option=3):
         
     return xcoeff
 
-def neighbor(atoms,center,rmax=1.0):
+def neighbor(atoms,center,bond_lengths):
     """
     Calculate neighbour indeces and dixtance around center atom.
 
@@ -317,14 +317,38 @@ def neighbor(atoms,center,rmax=1.0):
         print('Not found Atoms data')
         return
     
-    grid = atoms.grid
+    # calculate rmax
+    bond_matrix = np.identity(len(atoms.elements_kind))
+    for i, elem1 in enumerate(atoms.elements_kind):            
+        for j, elem2 in enumerate(atoms.elements_kind):
+            pair = (elem1, elem2)
+            if pair in bond_lengths.keys():
+                bond_matrix[i][j] = bond_lengths[pair]
+            else:
+                pair = (elem2, elem1)
+                bond_matrix[i][j] = bond_lengths[pair]
+    rmax = np.max(bond_matrix)        
+    elements_indices = [atoms.elements_kind.index(e) for e in atoms.elements]
+    
+    grid = atoms.grid    
     if grid is None:
-        pass
-    else:
-        grid.neighbours(center, rmax, 0, atoms.number)
-        inei = grid.inei
-        dis = grid.d
-        
+        position = atoms.positions[center]        
+        distance_vector_array = atoms.positions - position
+        distance_squared_array = np.sum(np.square(distance_vector_array), axis=1)
+        delta_squared = np.square([bond_matrix[elements_indices[center]][j] for j in elements_indices])
+        bond_target_indices = (distance_squared_array <= delta_squared).nonzero()[0]
+        bond_target_indices = bond_target_indices[bond_target_indices != center]
+        inei = bond_target_indices
+        dis = np.sqrt(distance_squared_array[bond_target_indices])
+        dis, inei =zip(*sorted(zip(dis, inei)))
+        inei = np.array(inei)
+        dis = np.array(dis)
+    else:        
+        grid.neighbours(center, rmax, 0, atoms.number)           
+        delta = np.array([bond_matrix[elements_indices[center]][elements_indices[j]] for j in grid.inei])
+        indices = (grid.d <= delta).nonzero()[0]
+        inei = np.array(grid.inei)[indices]
+        dis = np.array(grid.d)[indices]
     return inei, dis
 
 def neighbors(atoms,rmin=None,rmax=None):
