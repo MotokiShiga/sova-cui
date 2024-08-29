@@ -643,7 +643,20 @@ class Atoms(object):
         print('bond lengths : ')
         for pair, length in self.bond_lengths.items():
             print('{:<2} - {:<2} : {:.2f}'.format(pair[0], pair[1], length))
-            
+    
+    @property
+    def angles(self):
+        bonds = self.bonds
+        _angles = []
+        for i, bond in enumerate(bonds):
+            pair = []
+            for j, elem1 in enumerate(bond):
+                for k, elem2 in enumerate(bond):
+                    if j < k:
+                        pair.append((elem1, elem2))
+            _angles.append(pair)
+        return _angles
+
     @property
     def colors(self):
         if self._colors is None:
