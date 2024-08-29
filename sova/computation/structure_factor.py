@@ -319,7 +319,7 @@ def neighbor(atoms,center,bond_lengths):
     
     # calculate rmax
     bond_matrix = np.identity(len(atoms.elements_kind))
-    for i, elem1 in enumerate(atoms.elements_kind):            
+    for i, elem1 in enumerate(atoms.elements_kind):
         for j, elem2 in enumerate(atoms.elements_kind):
             pair = (elem1, elem2)
             if pair in bond_lengths.keys():
@@ -430,23 +430,22 @@ def neighbors(atoms,rmin=None,rmax=None):
             print(' Average coordination {:>6.2f}'.format(cdno))
             print('---------------------------\n')
 
-def triplets(atoms,r,nth=10,norm_sin=True):
+def triplets(atoms,bond_lengths,nth=10,norm_sin=True):
     MAX_THETA = 10000
     
     nba = 0
     ntypes = len(atoms.symbols)
-    
+        
     rmax = np.zeros((ntypes,ntypes))
-    n = 0
-    for i in range(ntypes):
-        for j in range(i,ntypes):
-            rmax[i,j] = r[n]
-            n += 1
-            
-    for i in range(ntypes):
-        for j in range(i+1, ntypes):
-            rmax[j,i] = rmax[i,j]  
-            
+    for i, elem1 in enumerate(atoms.symbols):
+        for j, elem2 in enumerate(atoms.symbols):
+            pair = (elem1, elem2)
+            if pair in bond_lengths.keys():
+                rmax[i][j] = bond_lengths[pair]
+            else:
+                pair = (elem2, elem1)
+                rmax[i][j] = bond_lengths[pair]            
+        
     rbig = np.max(rmax)
     nth = min(nth, MAX_THETA)
     ncth = np.zeros((nth+1,ntypes,ntypes,ntypes), dtype=np.int32)    
