@@ -340,7 +340,8 @@ def neighbor(atoms,center,bond_lengths):
         bond_target_indices = bond_target_indices[bond_target_indices != center]
         inei = bond_target_indices
         dis = np.sqrt(distance_squared_array[bond_target_indices])
-        dis, inei =zip(*sorted(zip(dis, inei)))
+        if len(inei):            
+            dis, inei =zip(*sorted(zip(dis, inei)))
         inei = np.array(inei)
         dis = np.array(dis)
     else:        
@@ -430,23 +431,54 @@ def neighbors(atoms,rmin=None,rmax=None):
             print(' Average coordination {:>6.2f}'.format(cdno))
             print('---------------------------\n')
 
+def coords(atoms, metric, i, j):
+    x = atoms.norm_positions[j][0]-atoms.norm_positions[i][0]+3.
+    y = atoms.norm_positions[j][1]-atoms.norm_positions[i][1]+3.
+    z = atoms.norm_positions[j][2]-atoms.norm_positions[i][2]+3.
+    x = 2.*(x/2.-int(x/2.))-1.
+    y = 2.*(y/2.-int(y/2.))-1.
+    z = 2.*(z/2.-int(z/2.))-1.
+    
+    d = metric[0][0]*x*x+metric[1][1]*y*y+metric[2][2]*z*z \
+      + 2.0*(metric[0][1]*x*y+metric[0][2]*x*z+metric[1][2]*y*z)
+    
+    return np.array([x,y,z]), math.sqrt(d)
+
+def cosine(a, b, c):
+    """
+    
+
+    Parameters
+    ----------
+    a : TYPE
+        DESCRIPTION.
+    b : list 
+        center position list.
+    c : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    cos_theta : TYPE
+        DESCRIPTION.
+
+    """
+    ab = np.array(a) - np.array(b)
+    bc = np.array(c) - np.array(b)
+        
+    dot_product = np.dot(ab, bc)
+    
+    norm_ab = np.linalg.norm(ab)
+    norm_bc = np.linalg.norm(bc)
+        
+    cos_theta = dot_product / norm_ab / norm_bc
+    
+    return cos_theta
+
 def triplets(atoms,bond_lengths,nth=10,norm_sin=True):
     MAX_THETA = 10000
     
-    nba = 0
     ntypes = len(atoms.symbols)
-        
-    rmax = np.zeros((ntypes,ntypes))
-    for i, elem1 in enumerate(atoms.symbols):
-        for j, elem2 in enumerate(atoms.symbols):
-            pair = (elem1, elem2)
-            if pair in bond_lengths.keys():
-                rmax[i][j] = bond_lengths[pair]
-            else:
-                pair = (elem2, elem1)
-                rmax[i][j] = bond_lengths[pair]            
-        
-    rbig = np.max(rmax)
     nth = min(nth, MAX_THETA)
     ncth = np.zeros((nth+1,ntypes,ntypes,ntypes), dtype=np.int32)    
     dcth = 180.0/nth
@@ -454,52 +486,49 @@ def triplets(atoms,bond_lengths,nth=10,norm_sin=True):
     cth = [i*dcth for i in range(nth+1)]
 
     # calculate angle distribution
-    
-    if atoms.grid is not None:        
-        grid = atoms.grid    
+    if atoms.grid is not None:
         _metric = metric(atoms.volume.vectors)
         
-        for i in range(atoms.number):
+        for i in range(atoms.number):            
             i2 = atoms.symbols.index(atoms.elements[i])
-            
-            """
-            Determine neighbours
-            i    : center atom
-            rbig : max radius
-            0    : begin index
-            cfg.nmol-1 : end index
-            """
-            grid.neighbours(i, rbig, 0, atoms.number-1)
-            neigh = len(grid.inei)
-            inei = grid.inei
-            coords = grid.coords
-            dis = grid.d
-            
-            if nba > 0:
-                neigh = min(neigh, nba)    
+            inei, dis = neighbor(atoms,i,bond_lengths)
             itypes = [atoms.symbols.index(atoms.elements[n]) for n in inei]
-                                
-            for j in range(neigh):
-                for k in range(j+1, neigh):
+            
+            for nj, j in enumerate(inei):
+                for nk, k in enumerate(inei):
+                    if nj >= nk: continue
+                    
+                    coords_j, dij = coords(atoms, _metric, i, j)
+                    coords_k, dik = coords(atoms, _metric, i, k)                    
                     costh = 0.0
                     for ia in range(3):
                         for ib in range(3):
-                            costh = costh + _metric[ia][ib] * coords[ia][j] * coords[ib][k]
-                
-                    costh = costh / dis[j] / dis[k]
+                            costh = costh + _metric[ia][ib] * coords_j[ia] * coords_k[ib]                    
+                    costh = costh / dij / dik
                     costh = max(-1, min(costh, 1.0))
                     thet = 180. * np.arccos(costh)/np.pi
                     ith = int(ceil(thet-dth/2, dth)/dth)
-                    i1 = max(itypes[j], itypes[k])
-                    i3 = min(itypes[j], itypes[k])
-                    
-                    if dis[j] <= rmax[max(itypes[j], i2)][min(itypes[j], i2)] and \
-                       dis[k] <= rmax[max(itypes[k], i2)][min(itypes[k], i2)]:           
-                        ncth[ith,i1,i2,i3] = ncth[ith,i1,i2,i3] + 1
-    
-    else:
-        pass
-    
+                    i1 = max(itypes[nj], itypes[nk])
+                    i3 = min(itypes[nj], itypes[nk])
+                    ncth[ith,i1,i2,i3] = ncth[ith,i1,i2,i3] + 1
+    else:        
+        for i in range(atoms.number):
+            i2 = atoms.symbols.index(atoms.elements[i])
+            inei, dis = neighbor(atoms,i,bond_lengths)
+            itypes = [atoms.symbols.index(atoms.elements[n]) for n in inei]
+            
+            for nj, j in enumerate(inei):
+                for nk, k in enumerate(inei):
+                    if nj >= nk: continue
+
+                    costh = cosine(atoms.positions[j], atoms.positions[i], atoms.positions[k])
+                    costh = max(-1, min(costh, 1.0))
+                    thet = 180. * np.arccos(costh)/np.pi
+                    ith = int(ceil(thet-dth/2, dth)/dth)
+                    i1 = max(itypes[nj], itypes[nk])
+                    i3 = min(itypes[nj], itypes[nk])
+                    ncth[ith,i1,i2,i3] = ncth[ith,i1,i2,i3] + 1
+        
     _triplets = []
     for i1 in range(ntypes):
         for i2 in range(ntypes):
