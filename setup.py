@@ -2,7 +2,7 @@
 """
 Created on Tue Jun 18 18:16:52 2024
 
-@author: H. Morita
+@author: H. Morita and M. Shiga
 """
 
 from setuptools import setup, find_packages
@@ -23,9 +23,11 @@ class sova_install(install):
       #os.mkdir('data1')
       if platform.system() == 'Windows':
           path = os.path.join(os.path.dirname(__file__), 'make.bat')
-          subprocess.Popen(path)
+          p = subprocess.Popen(path)
+          p.wait()
       else:
-          os.system("bash make.sh")
+          p = subprocess.Popen('bash make.sh', shell=True)
+          p.wait()
 
   def run(self): 
       self._pre_install()
@@ -36,7 +38,7 @@ class sova_install(install):
         
 setup(
     name='sova',
-    version='0.1.0',
+    version='0.5.0',
     install_requires=[
         'ase',
         'numpy',
