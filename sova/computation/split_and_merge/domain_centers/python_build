@@ -1,1 +1,0 @@
-python3.10 setup.py build_ext -i

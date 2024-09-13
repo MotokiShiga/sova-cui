@@ -1,22 +1,25 @@
 # sova-cui
 
+This version of SOVA can be installed in MacOX and Linux.
+We are preparing a binary version for Windows.
 
-
-# Installation
+# Installation of python package **sova**,
 1. Clone the SOVA repo
 
   ```sh
   git clone https://github.com/***/sova-cui.git
   ```
 
-2. Install the pip package    
+2. To compile GR library, run 
+
   ```sh
-  # Option 1: install from PyPI
-  pip install sova
-  
-  # Option 2: install from source
-  # To enable verbose mode, use the -v option.
-  pip install [-v] .
+  cd sova-cui
+  bash install_gr.sh
+  ```
+
+3. To install SOVA, run    
+  ```sh
+  pip install .  
   ```
 
 For the usage, see example codes in the directory 'examples'.
@@ -44,6 +47,7 @@ The versions of other packages can be found in the setup.py file.
 SOVA reuses source codes of the following package:
 
 - [pyMolDyn](https://github.com/sciapp/pyMolDyn)
+- [GR](https://github.com/sciapp/gr)
 - [cif2cell](https://pypi.org/project/cif2cell/#description)
 
 ## Usage
