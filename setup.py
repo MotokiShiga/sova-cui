@@ -66,7 +66,7 @@ else:
 
 setup(
     name='sova',
-    version='0.5.0',
+    version='0.4.9',
     install_requires=[
         'ase',
         'numpy',
