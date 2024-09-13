@@ -7,7 +7,7 @@ SRCS := algorithm.c gr3_mc.c
 all: libalgorithm.so
 
 libalgorithm.so:
-	clang -Wall -Wextra -fPIC $(CFLAGS) $(INCLUDES1) $(INCLUDES2) -o $@ $(SRCS) -shared $(LDFLAGS)
+	$(CC) -Wall -Wextra -fPIC $(CFLAGS) $(INCLUDES1) $(INCLUDES2) -o $@ $(SRCS) -shared $(LDFLAGS)
 
 clean:
 	rm -f *.pyc *.pyo

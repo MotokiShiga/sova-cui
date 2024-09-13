@@ -1,8 +1,8 @@
-# install external library
+# Install external library
 
 
 
-# Installation
+# Install GR lib
 1. Clone the GR repo
 
   ```sh
