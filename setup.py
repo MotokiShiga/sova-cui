@@ -79,7 +79,7 @@ setup(
         'spglib',
         'PyCifRW',
     ],
-    author='Tohoku Univ.',
+    author='Tohoku University',
     author_email='motoki.shiga.b4@tohoku.ac.jp',
     url='https://www.shiga-lab.org/sova',
     
