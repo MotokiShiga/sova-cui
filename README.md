@@ -1,9 +1,9 @@
 # sova-cui
 
-This version of SOVA can be installed in MacOX and Linux.
+This version of SOVA can be installed in macOS and Linux.    
 We are preparing a binary version for Windows.
 
-# Installation of python package **sova**,
+# Installation of python package **sova**
 1. Clone the SOVA repo
 
   ```sh
@@ -14,7 +14,7 @@ We are preparing a binary version for Windows.
 
   ```sh
   cd sova-cui
-  bash install_gr.sh
+  bash install_mac_linux.sh
   ```
 
 3. To install SOVA, run    
@@ -40,7 +40,15 @@ For the usage, see example codes in the directory 'examples'.
 | spglib               | 2.0.2     |
 | PyCifRW             | 4.4.5      |
   
-The versions of other packages can be found in the setup.py file.
+The versions of other packages can be found in requirements.txt.
+
+You can make the virtual environment for sova by
+```
+python -m venv sova-cui
+source sova-cui/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+```
 
 ## Acknowledgements
 

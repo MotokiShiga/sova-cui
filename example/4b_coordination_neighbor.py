@@ -18,6 +18,10 @@ f = File.open(structure_file)
 # Get atomic and cell (simulation box) data
 atoms = f.getatoms()
 
+# Setting of maximum bond lengths for atomic element pairs
+# Set -1 to pairs for which you don't want to build bonds.
+bond_lengths = {('Si', 'O') : 2.0, ('Si', 'Si') : -1, ('O', 'O') : -1}
+
 # Indices of Si and O atoms
 ids_si = [i for i, s in enumerate(atoms.elements) if s == 'Si']
 ids_o = [i for i, s in enumerate(atoms.elements) if s == 'O']
@@ -28,7 +32,8 @@ cn_max = 1
 # Calculate the histogram of coordination number around Si atom
 hist_cn_si = np.zeros(cn_max+1, dtype='int')
 for i in ids_si:
-    nei, dis = neighbor(atoms, i, 2.0)
+    #This computation does NOT change chemical bonds.
+    nei, dis = neighbor(atoms, i, bond_lengths)
     num = 0
     for n in nei:
         if n in ids_o:
@@ -53,7 +58,7 @@ cn_max = 1
 # Calculate the histogram of coordination number around O atom
 hist_cn_o = np.zeros(cn_max+1, dtype='int')
 for i in ids_o:
-    nei, dis = neighbor(atoms, i, 2.0)
+    nei, dis = neighbor(atoms, i, bond_lengths)
     num = 0
     for n in nei:
         if n in ids_si:

@@ -302,8 +302,10 @@ def neighbor(atoms,center,bond_lengths):
     ----------
     center : int
         atom index.
-    rmax : float, optional
-        calculate max distance. The default is None.
+    bond_lengths : dict
+        maximum bond lengths for atomic element pairs
+        Set -1 to pairs for which you don't want to build bonds.
+        
 
     Returns
     -------

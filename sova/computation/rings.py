@@ -7,7 +7,6 @@ import networkx as nx
 from ..core.gridding import Grid
 from functools import partial
 from tqdm import tqdm
-from functools import partial
 import copy
 #from tqdm.notebook import tqdm
 
