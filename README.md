@@ -9,12 +9,19 @@ We are preparing a binary version for Windows.
   ```sh
   git clone https://github.com/***/sova-cui.git
   ```
-
-2. To compile GR library, run 
-
+  And move to the downloaded directory
   ```sh
   cd sova-cui
-  bash install_mac_linux.sh
+  bash 
+
+2. To compile and to generate so or dll files, run  
+for macos and linux
+  ```sh
+  bash run_install_mac_linux.sh
+  ```
+For windows, use "x64 Native Tools Command Prompt for Visual Studio 2022" to run 
+  ```sh
+  install_win.bat
   ```
 
 3. To install SOVA, run    
@@ -54,21 +61,10 @@ pip install -r requirements.txt
 
 SOVA reuses source codes of the following package:
 
-- [pyMolDyn](https://github.com/sciapp/pyMolDyn)
 - [GR](https://github.com/sciapp/gr)
+- [pyMolDyn](https://github.com/sciapp/pyMolDyn)
 - [cif2cell](https://pypi.org/project/cif2cell/#description)
 
-## Usage
-
-Basic usage:
-
-```python
-from sova.core.file import File
-
-path = "./data/amorphous_md/a_SiO2_speed1e11K_rand.xyz"
-f = File.open(path)
-atoms = f.getatoms()
-```
 
 ## Examples
 ```sh
@@ -83,7 +79,7 @@ atoms = f.getatoms()
 9_save_result   : Save and load calculated results
 ``` 
 
-Execute example1.py:
+Execute example/1_pdf_xyz.py:
 
 ```sh
 Histogram [O-O], [O-Si], [Si-Si]

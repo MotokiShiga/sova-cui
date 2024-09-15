@@ -1,12 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Mar 31 09:31:54 2023
-
-@author: morita
-"""
-
-from distutils.core import setup, Extension
+from setuptools import setup, Extension
 from numpy.distutils.misc_util import get_numpy_include_dirs
 
 setup(

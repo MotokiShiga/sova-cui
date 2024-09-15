@@ -39,7 +39,19 @@ if sys.platform == "win32":
 else:
     libext = ".so"
 
-libpath = os.path.join(os.path.realpath(os.path.dirname(__file__)), "libalgorithm"+libext)
+# file name with ".dll" or ".so"
+tmp_files = os.listdir(os.path.realpath(os.path.dirname(__file__)))
+so_files = [i for i in tmp_files if i.endswith(libext) == True]
+libpath = os.path.join(os.path.realpath(os.path.dirname(__file__)), so_files[0])
+
+if sys.platform == "win32":
+    # add path to search dll and files
+    for p in os.environ['PATH'].split(os.pathsep):
+        if os.path.isdir(p):
+            os.add_dll_directory(p)
+    os.add_dll_directory(os.path.realpath(os.path.dirname(__file__)))
+
+# load dll or so file
 lib = CDLL(libpath)
 
 lib.atomstogrid.restype = None
