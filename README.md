@@ -1,7 +1,7 @@
 # sova-cui
 
-This version of SOVA can be installed in macOS and Linux.    
-We are preparing a binary version for Windows.
+This version of SOVA can be installed in Windows, macOS and Linux.    
+We are preparing a binary version for PYPI.
 
 # Installation of python package **sova**
 1. Clone the SOVA repo
