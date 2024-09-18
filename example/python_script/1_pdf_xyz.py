@@ -1,17 +1,13 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri May  3 09:13:22 2024
-
-@author: H. Morita and M. Shiga
-"""
-
-from sova.core.file import File
-from sova.computation.structure_factor import (histogram,gr,total_gr,SQ,total_SQ,total_FQ,
+from sovapy.core.file import File
+from sovapy.computation.structure_factor import (histogram,gr,total_gr,SQ,total_SQ,total_FQ,
                                     ncoeff,xcoeff,Gr,Tr,Nr)
 import matplotlib.pyplot as plt
 
-# Load structural information from a cif file
-structure_file = "./data/crystal/sio2_beta_cristobalite222.cif"
+
+# Load structural information from a xyz file
+# The second line (CUB 24.713) in the xyz file indicates the shape of cell and its length.
+# (CUB means cubics.)
+structure_file = "../data/amorphous_md/a_SiO2_speed1e11K_rand.xyz"
 f = File.open(structure_file)
 
 # Get atomic and cell (simulation box) data
@@ -19,13 +15,17 @@ atoms = f.getatoms()
 
 print("Atom symbols:", atoms.symbols)
 
-# CIF files have periodicity information.
 print("Is the periodicity information of the cell available?:")
 print(atoms.volume.periodic)
+# SOVA requires the periodicity information to compute PDF functions.
+# Only histograms of distances between atom pairs can be computed without it.
+
 
 # Histograms of distances between atom pairs
 dr = 0.05   # bin width 
 r, hist = histogram(atoms,dr) # calculate histograms
+# Input symbols option to determine plot order of atoms 
+#r, hist = histogram(atoms,dr,symbols=['Si','O'])
 
 # Plot histograms of pair distance
 fig = plt.figure(figsize=(12, 4)) 

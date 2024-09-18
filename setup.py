@@ -8,9 +8,9 @@
 from setuptools import setup, find_packages
 import re
 
-DESCRIPTION = "SOVA: structural order visualization and analysis"
-NAME = 'sova'
-AUTHOR = 'Motoki Shiga, Hidetoshi Morita'
+DESCRIPTION = "SOVA (Structural Order Visualization and Analysis) with Python"
+NAME = 'sovapy'
+AUTHOR = 'Motoki Shiga & Hidetoshi Morita'
 MAINTAINER = 'Motoki Shiga'
 AUTHOR_EMAIL = 'motoki.shiga.b4@tohoku.ac.jp'
 URL = 'https://github.com/MotokiShiga/sova-cui'
@@ -18,20 +18,20 @@ LICENSE = 'MIT License'
 DOWNLOAD_URL = 'https://github.com/MotokiShiga/sova-cui'
 PYTHON_REQUIRES = ">=3.10"
 # Get the current version number:
-with open('sova/__init__.py') as fd:
+with open('sovapy/__init__.py') as fd:
     VERSION = re.search("__version__ = '(.*)'", fd.read()).group(1)
 
 INSTALL_REQUIRES = [
-        'ase',
-        'numpy',
-        'scipy',
-        'matplotlib',
+        'ase>=3.22.1',
         'h5py',
-        'networkx==3.1',
-        'numba',
+        'igraph>=0.11.2',
+        'matplotlib',
+        'networkx>=3.1',
+        'numpy>=1.23.1',
         'tqdm',
-        'spglib',
-        'PyCifRW',
+        'scipy>=1.8',
+        'spglib>=2.0',
+        'PyCifRW>=4.4.5',
     ]
 
 CLASSIFIERS = [
@@ -40,7 +40,6 @@ CLASSIFIERS = [
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
-    'Programming Language :: Python :: 3.12',
     'Topic :: Scientific/Engineering',
     'Topic :: Scientific/Engineering :: Information Analysis',
     'Topic :: Scientific/Engineering :: Physics',

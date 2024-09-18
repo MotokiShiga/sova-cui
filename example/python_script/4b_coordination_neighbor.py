@@ -1,18 +1,11 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri May  3 09:13:22 2024
-
-@author: H. Morita and M. Shiga
-"""
-
-from sova.core.file import File
-from sova.computation.structure_factor import neighbor
+from sovapy.core.file import File
+from sovapy.computation.structure_factor import neighbor
 import matplotlib.pyplot as plt
 import numpy as np
 
 
 # Load structural information from a xyz file
-structure_file = "./data/amorphous_md/a_SiO2_speed1e11K_rand.xyz"
+structure_file = "../data/amorphous_md/a_SiO2_speed1e11K_rand.xyz"
 f = File.open(structure_file)
 
 # Get atomic and cell (simulation box) data
@@ -43,10 +36,10 @@ for i in ids_si:
         cn_max = num+1
     hist_cn_si[num] += 1
 
-# Plot distribution of corrdination numbers
+# Plot distribution of coordination numbers
 cood_num = np.arange(cn_max+1)
 plt.bar(cood_num, hist_cn_si)
-plt.xlabel('The number of neighbors around Si')
+plt.xlabel('Coordination number of Si atom')
 plt.ylabel('Counts')
 plt.xticks(cood_num)
 plt.show()
@@ -68,10 +61,10 @@ for i in ids_o:
         cn_max = num+1
     hist_cn_o[num] += 1
 
-# Plot distribution of corrdination numbers
+# Plot distribution of coordination numbers
 cood_num = np.arange(cn_max+1)
 plt.bar(cood_num, hist_cn_o)
-plt.xlabel('The number of neighbors around O')
+plt.xlabel('Coordination number of O atom')
 plt.ylabel('Counts')
 plt.xticks(cood_num)
 plt.show()

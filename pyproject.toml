@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools", "numpy", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sovapy"
+description = "SOVA (Structural Order Visualization and Analysis) with python"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [
+  {name = "Motoki Shiga & Hidetoshi Morita", email = "motoki.shiga@tohoku.ac.jp"},
+]
+maintainers = [
+  {name = "Motoki Shiga", email = "motoki.shiga@tohoku.ac.jp"}
+]
+keywords = ["structure order analysis","material science"]
+classifiers = [
+    'Intended Audience :: Science/Research',
+    'License :: OSI Approved :: MIT License',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Topic :: Scientific/Engineering',
+    'Topic :: Scientific/Engineering :: Information Analysis',
+    'Topic :: Scientific/Engineering :: Physics',
+    'Topic :: Scientific/Engineering :: Chemistry',
+    'Topic :: Software Development :: Libraries :: Python Modules',
+]
+dependencies = [
+    'ase>=3.22.1',
+    'h5py',
+    'igraph>=0.11.2',
+    'matplotlib',
+    'networkx>=3.1',
+    'numpy>=1.23.1',
+    'tqdm',
+    'scipy>=1.8',
+    'spglib>=2.0',
+    'PyCifRW>=4.4.5',
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/MotokiShiga/sova-cui"
+Repository   = "https://github.com/MotokiShiga/sova-cui.git"
+

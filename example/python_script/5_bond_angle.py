@@ -1,16 +1,9 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri May  3 09:13:22 2024
-
-@author: H. Morita and M. Shiga
-"""
-
-from sova.core.file import File
-from sova.computation.structure_factor import triplets
+from sovapy.core.file import File
+from sovapy.computation.structure_factor import triplets
 import matplotlib.pyplot as plt
 
 # Load structural information from a xyz file
-structure_file = "./data/amorphous_md/a_SiO2_speed1e11K_rand.xyz"
+structure_file = "../data/amorphous_md/a_SiO2_speed1e11K_rand.xyz"
 f = File.open(structure_file)
 
 # Get atomic and cell (simulation box) data
@@ -19,12 +12,10 @@ atoms = f.getatoms()
 print("Atom symbols:", atoms.symbols)
 
 # Thresholds of distance between atom pairs to enumerate neighbors
-
-# bond length pair
 bond_lengths = {('Si', 'O') : 1.77, ('Si', 'Si') : 1.32, ('O', 'O') : 2.22}
 
 # Calculate bond angle distributions
-angle, hist = triplets(atoms, bond_lengths)
+angle, hist = triplets(atoms, bond_lengths, 30)
 
 #Plot bond angle distributions
 w = angle[1]-angle[0]

@@ -1,13 +1,19 @@
-# sova-cui
+# SOVApy (Structural Order Viaualization and Analysis with Python)
 
-This version of SOVA can be installed in Windows, macOS and Linux.    
-We are preparing a binary version for PYPI.
+SOVA can be installed in Windows, macOS and Linux.    
+(The package name to be imported is "sovapy".)
 
-# Installation of python package **sova**
+# Install from PIPY 
+
+```sh
+pip install sovapy
+```
+
+# Build and Install sovapy
 1. Clone the SOVA repo
 
   ```sh
-  git clone https://github.com/***/sova-cui.git
+  git clone https://github.com/MotokiShiga/sova-cui.git
   ```
   And move to the downloaded directory
   ```sh
@@ -31,21 +37,24 @@ For windows, use "x64 Native Tools Command Prompt for Visual Studio 2022" to run
 
 For the usage, see example codes in the directory 'examples'.
 
-## Requirements
+## Environment
+
+Major packages used for our development
 
 <!-- framework & version -->
-
-| framework  | version |
+| Package  | Version |
 | --------------------- | ---------- |
 | Python                | 3.10.0     |
-| numpy                | 1.23.5      |
-| scipy | 1.8.1    |
-| ase                 | 3.23.0     |
+| ase                 | 3.22.1     |
 | h5py              | 3.7.0    |
-| networkx                 | 3.1     |
 | igraph                 | 0.11.3     |
-| spglib               | 2.0.2     |
+| matplotlib   | 3.6.3  |
+| networkx                 | 3.1     |
+| numpy                | 1.23.5      |
 | PyCifRW             | 4.4.5      |
+| scipy | 1.8.1    |
+| spglib               | 2.0.2     |
+
   
 The versions of other packages can be found in requirements.txt.
 

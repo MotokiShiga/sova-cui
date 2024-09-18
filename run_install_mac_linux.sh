@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # histogram.so
-cd ./sova/computation/histogram
+cd ./sovapy/computation/histogram
 python setup.py build_ext -i
 rm -rf build
 
@@ -36,15 +36,15 @@ cmake --build .
 
 #Copy a source file
 cd ..
-cp lib/gr3/gr3_mc.c ../../sova/computation/cavity_calculation/extension/
+cp lib/gr3/gr3_mc.c ../../sovapy/computation/cavity_calculation/extension/
 
 #Build libalgorithm.so
-cd ../../sova/computation/cavity_calculation/extension/
+cd ../../sovapy/computation/cavity_calculation/extension/
 make
 cd ../../../../
 
 #Build libalgorithm.so using built files (macOS)
-# cd ./sova/computation/cavity_calculation/extension/
+# cd ./sovapy/computation/cavity_calculation/extension/
 # xattr -rc gr_mac/lib/*
 # cp gr_mac/lib/*dylib ./
 # python setup_mac.py build_ext -i

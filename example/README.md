@@ -1,3 +1,9 @@
+## Directries
+```sh
+data             : Structure data (cif, xyz, cfg)
+python_script    : Python script (.py) of examples
+jupyter_notebook : Jupyter notebook (.ipynb) of examples
+```
 
 ## Examples
 ```sh
