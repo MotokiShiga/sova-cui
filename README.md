@@ -3,7 +3,7 @@
 SOVA can be installed in Windows, macOS and Linux.    
 (The package name to be imported is "sovapy".)
 
-# Install from PIPY 
+# Install from PyPI 
 
 ```sh
 pip install sovapy
