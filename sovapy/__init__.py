@@ -1,5 +1,5 @@
 """ Structural Order Visualization and Analysis tools (SOVA) """
 
-__version__ = '0.5.2.1'
+__version__ = '0.5.3'
 
 from . import core, computation, config, libs, util

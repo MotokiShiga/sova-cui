@@ -30,9 +30,7 @@ For windows, use "x64 Native Tools Command Prompt for Visual Studio 2022" to run
   ```sh
   install_win.bat
   ```
-If you encounter an issue with "vcruntime140.dll", 
-please install "Microsoft Visual C++ 2015 Redistributable".
-
+  
 3. To install SOVA, run    
   ```sh
   pip install .  
