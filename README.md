@@ -19,6 +19,7 @@ pip install sovapy
   ```sh
   cd sova-cui
   bash 
+  ```
 
 2. To compile and to generate so or dll files, run  
 for macos and linux
