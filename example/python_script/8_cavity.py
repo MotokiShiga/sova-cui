@@ -16,7 +16,14 @@ atoms = f.getatoms()
 cavity = Cavity(atoms)
 
 # Calculate cavities
-cavity.calculate()
+# use default radii
+cavity.calculate(resolution=64)
+
+# set same radii for all elements
+# cavity.calculate(resolution=64, cutoff_radii=2.8, gyration_tensor_parameters=False)
+
+# set custom radii
+# cavity.calculate(resolution=64, cutoff_radii={'Si': 2.0, 'O': 3.0}, gyration_tensor_parameters=False)
 
 ### Display caluculation results
 print("Calculate domains")

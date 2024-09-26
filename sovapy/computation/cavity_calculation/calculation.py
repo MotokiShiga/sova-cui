@@ -17,8 +17,8 @@ from config.configuration import config
 from util.logger import Logger
 import sys
 import core.bonds
-from gui.dialogs.element_settings_dialog import ElementSettingsDialog
-from PySide6 import QtWidgets
+# from gui.dialogs.element_settings_dialog import ElementSettingsDialog
+# from PySide6 import QtWidgets
 
 __all__ = ["Calculation",
            "CalculationCache",
@@ -250,15 +250,15 @@ class Calculation(object):
                 for i in range(inputfile.info.nmol_types):
                     nums['X' + str(i+1)] = inputfile.info.ni[i]
                 
-                dialog = ElementSettingsDialog(nums)
-                if dialog.exec() == QtWidgets.QDialog.Accepted:
-                    inputfile.elements = dialog.symbols()
-                    if dialog.is_savefile() == True:
-                        with open(elem_file, 'w') as f:
-                            for elem in inputfile.elements:
-                                f.write('{}\n'.format(elem))
-                else:
-                    pass
+                # dialog = ElementSettingsDialog(nums)
+                # if dialog.exec() == QtWidgets.QDialog.Accepted:
+                #     inputfile.elements = dialog.symbols()
+                #     if dialog.is_savefile() == True:
+                #         with open(elem_file, 'w') as f:
+                #             for elem in inputfile.elements:
+                #                 f.write('{}\n'.format(elem))
+                # else:
+                #     pass
         
         info = None
         # TODO: error handling
