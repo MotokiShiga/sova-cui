@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Jun 12 15:08:59 2024
-
-@author: H. Morita
-"""
-
 import os
 from ..core import data
 from .cavity_calculation.algorithm import CavityCalculation, DomainCalculation, FakeDomainCalculation

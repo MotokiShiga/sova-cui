@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Oct 16 10:27:36 2023
-
-@author: morita
-"""
-
 import numpy as np
 from .utils import angle
 from scipy.spatial import Delaunay

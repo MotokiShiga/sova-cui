@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Apr 20 08:54:09 2022
-
-@author: H. Morita
-"""
-
 import os
 import h5py
 from . import data
@@ -20,15 +13,6 @@ from .io.xyz_file import XYZFile
 from .io.exyz_file import EXYZFile
 from .io.cfg_file import CFGFile
 from .io.cif_file import CIFFile
-
-try:    
-    from openbabel import pybel    
-except ImportError:
-    class pybel:
-        """
-        Dummy class representing a missing pybel module.
-        """
-        informats = {}
         
 class NewFile(InputFile):
     def __init__(self, path):
@@ -57,66 +41,6 @@ class NewFile(InputFile):
         symbols.append('H')
         return data.Atoms(positions, None, symbols, self.info.volume)
     
-class BabelFile(InputFile):
-    """
-    Implementation on :class:`InputFile` for Open Babel 'xyz' files.
-    """
-    def __init__(self, path):
-        super(BabelFile, self).__init__(path)
-        # Check if the file exists
-        f = open(self.path, "r")
-        f.close()
-
-    def readinfo(self):
-        try:
-            file_extension = os.path.splitext(self.path)[1][1:]
-            mol_iter = pybel.readfile(file_extension.encode('utf8'),
-                                      self.path.encode('utf8'))
-            try:
-                mol = next(mol_iter)
-                self._info.volumestr = mol.title
-                self._info.num_frames = 1
-                for _ in mol_iter:
-                    self._info.num_frames += 1
-            except StopIteration:
-                self._info.num_frames = 0
-            self.inforead = True
-        except IOError:
-            raise
-        except Exception as e:
-            raise FileError("Cannot read file info.", e)
-
-    def readatoms(self, frame):
-        try:
-            if self.info.num_frames <= frame:
-                raise IndexError("Frame {} not found".format(frame))
-
-            file_extension = os.path.splitext(self.path)[1][1:]
-            mol_iter = pybel.readfile(file_extension.encode('utf8'),
-                                      self.path.encode('utf8'))
-
-            # get the correct frame
-            try:
-                for _ in range(frame):
-                    mol_iter.next()
-                mol = mol_iter.next()
-            except StopIteration:
-                raise IndexError("Frame {} not found".format(frame))
-
-            # read the atom information
-            symbols = []
-            positions = []
-            for atom in mol.atoms:
-                positions.append(tuple(float(c) for c in atom.coords))
-                symbol = elements.symbols[atom.atomicnum]
-                symbols.append(symbol)
-            return data.Atoms(positions, None, symbols, self.info.volume)
-        except (IOError, IndexError):
-            raise
-        except Exception as e:
-            raise FileError("Cannot read atom data.", e)  
-        
-
 class ResultFile(InputFile):
     """
     Abstract access to a file that contains both input data (atoms) and
@@ -352,8 +276,7 @@ class File(object):
     types : dictionary
         pair file format and file class
     """   
-    types = dict(list(zip(pybel.informats.keys(), repeat(BabelFile))) +
-                 [
+    types = dict([
                      ("xyz", XYZFile),
                      ("exyz", EXYZFile),
                      ("cfg", CFGFile),

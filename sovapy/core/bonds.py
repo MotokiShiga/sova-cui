@@ -1,8 +1,3 @@
-#coding=utf-8
-"""
-
-"""
-
 import sys
 import math
 import numpy as np

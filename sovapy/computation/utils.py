@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Nov  8 16:58:10 2022
-
-@author: H. Morita
-"""
-
 import math
 import numpy as np
 #for the calculations of the distance matrix and angles (cosine)

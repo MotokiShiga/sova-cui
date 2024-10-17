@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Aug  8 16:57:33 2022
-
-@author: H. Morita
-"""
-
 from .configobj import ConfigObj
 from distutils.util import strtobool
 

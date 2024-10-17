@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Oct  5 16:21:46 2022
-
-@author: H. Morita
-"""
 import numpy as np
 from .. import data
 from .input_file import InputFile

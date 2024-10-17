@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Oct  5 16:16:20 2022
-
-@author: H. Morita
-"""
-
 import os
 from .. import data
 from .io_utils import get_abspath

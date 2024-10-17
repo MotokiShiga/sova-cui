@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sun May  1 10:48:50 2022
-
-@author: H. Morita
-"""
-
 import os, sys
 import collections
 import numpy as np
@@ -24,14 +17,6 @@ try:
     USE_LOGGER = True
 except ImportError:
     USE_LOGGER = False
-    
-try:
-    from openbabel import pybel
-    USE_PYBEL = True
-    PYBEL_MOLECULE_TYPE = pybel.Molecule    
-except ImportError:
-    USE_PYBEL = False
-    PYBEL_MOLECULE_TYPE = None
 
 if USE_LOGGER: 
     logger = Logger("core.data") 
@@ -459,25 +444,14 @@ class Atoms(object):
             positions = atoms.positions
             elements = atoms.elements        
         else:
-            # in these two cases atom positions may be outside of the volume
-            if USE_PYBEL and isinstance(args[0], PYBEL_MOLECULE_TYPE):
-                molecule = args[0]
-                if len(args) > 1:
-                    volume = args[1]
-                else:
-                    volume = None
-                positions = map(lambda atom: atom.coords, molecule)
-                elements = map(lambda atom: elements.symbols[atom.atomicnum],
-                               molecule)
-                radii = None
-            else:
-                positions = args[0]
-                radii = args[1]
-                elements = args[2]
-                volume = args[3]
-                is_norm = False
-                if len(args) > 4:
-                    is_norm = args[4]
+            # In this case, atom positions may be outside of the volume
+            positions = args[0]
+            radii = args[1]
+            elements = args[2]
+            volume = args[3]
+            is_norm = False
+            if len(args) > 4:
+                is_norm = args[4]
                                 
             if isinstance(volume, str):
                 volume = volumes.Volume.fromstring(volume)
@@ -677,9 +651,9 @@ class Atoms(object):
             self._radii = np.ones((self.number), dtype=np.float64) * config.Computation.std_cutoff_radius
         elif isinstance(values, collections.abc.Mapping):
             radii = [values[elem] for elem in self.elements]
-            self._radii = np.array(radii, dtype=np.float64, copy=False)
+            self._radii = np.array(radii, dtype=np.float64)
         elif isinstance(values, collections.abc.Iterable):
-            self._radii = np.array(values, dtype=np.float64, copy=False)
+            self._radii = np.array(values, dtype=np.float64)
         else:
             self._radii = np.ones((self.number), dtype=np.float64) * values
         indices = np.argsort(-self._radii, kind="mergesort")
@@ -789,17 +763,17 @@ class CavitiesBase(object):
         if not isinstance(timestamp, datetime):
             timestamp = dateutil.parser.parse(str(timestamp))
         self.timestamp = timestamp
-        self.volumes = np.array(volumes, dtype=np.float64, copy=False)
+        self.volumes = np.array(volumes, dtype=np.float64)
         self.number = len(volumes)
-        self.surface_areas = np.array(surface_areas, dtype=np.float64, copy=False)
-        self.triangles = [np.array(triangle, dtype=np.float64, copy=False) for triangle in triangles]
-        self.mass_centers = np.array(mass_centers, dtype=np.float64, copy=False)
-        self.squared_gyration_radii = np.array(squared_gyration_radii, dtype=np.float64, copy=False)
-        self.asphericities = np.array(asphericities, dtype=np.float64, copy=False)
-        self.acylindricities = np.array(acylindricities, dtype=np.float64, copy=False)
-        self.anisotropies = np.array(anisotropies, dtype=np.float64, copy=False)
-        self.characteristic_radii = np.array(characteristic_radii, dtype=np.float64, copy=False)
-        self.cyclic_area_indices = (np.array(cyclic_area_indices, dtype=np.int32, copy=False)
+        self.surface_areas = np.array(surface_areas, dtype=np.float64)
+        self.triangles = [np.array(triangle, dtype=np.float64) for triangle in triangles]
+        self.mass_centers = np.array(mass_centers, dtype=np.float64)
+        self.squared_gyration_radii = np.array(squared_gyration_radii, dtype=np.float64)
+        self.asphericities = np.array(asphericities, dtype=np.float64)
+        self.acylindricities = np.array(acylindricities, dtype=np.float64)
+        self.anisotropies = np.array(anisotropies, dtype=np.float64)
+        self.characteristic_radii = np.array(characteristic_radii, dtype=np.float64)
+        self.cyclic_area_indices = (np.array(cyclic_area_indices, dtype=np.int32)
                                     if cyclic_area_indices is not None else np.array([]))
 
     def tohdf(self, h5group, overwrite=True):
@@ -935,7 +909,7 @@ class Domains(CavitiesBase):
             super(Domains, self).__init__(*args)
             centers = args[4]
 
-        self.centers = np.array(centers, dtype=np.int32, copy=False)
+        self.centers = np.array(centers, dtype=np.int32)
         if 'discretization' in locals():
             # TODO: get discretization also from other constructor calls!
             self.continuous_centers = np.array([discretization.discrete_to_continuous(center) for center in centers], dtype=np.float64)

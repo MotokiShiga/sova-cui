@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Apr 28 12:42:00 2024
-
-@author: morita
-"""
-
 import math
 import numpy as np
 from ..core.elements import numbers

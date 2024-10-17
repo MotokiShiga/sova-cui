@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Oct 12 10:01:02 2022
-
-@author: H. Morita
-"""
-
 import numpy as np
 import ase
 

@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-
 __all__ = ["atomstogrid",
            "mark_cavities",
            "cavity_triangles",

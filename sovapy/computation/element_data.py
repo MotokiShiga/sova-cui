@@ -1,8 +1,5 @@
-# -*- coding: utf-8 -*-
-
 import os
 import numpy as np
-import math
 
 try:    
     from _path import basedir

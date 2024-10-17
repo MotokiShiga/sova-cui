@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Oct  6 21:14:13 2022
-
-@author: H. Morita
-"""
-
 import os
 
 SEARCH_PATH = os.getcwd()
