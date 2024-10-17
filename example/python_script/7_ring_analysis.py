@@ -15,8 +15,11 @@ ring = RINGs(atoms)
 
 # Enumerate Guttman rings in the structure
 # (Ring types: GUTTMAN, KING, PRIMITIVE)
-rings = ring.calculate(ring_type=RINGs.RingType.GUTTMAN, 
-                       pair_atom_symbols=[['Si', 'O']])
+# Option pair_atom_symbols is not necessary from version 0.5.4.1 for using all chemical bonds.
+rings = ring.calculate(ring_type=RINGs.RingType.GUTTMAN)
+
+# rings = ring.calculate(ring_type=RINGs.RingType.GUTTMAN, 
+#                        pair_atom_symbols=[['Si', 'O']])
 
 """
 Parallel computation is available using num_parallel option as follows:

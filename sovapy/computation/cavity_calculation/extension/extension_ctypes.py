@@ -48,7 +48,12 @@ if sys.platform == "win32":
     # add path to search dll and files
     for p in os.environ['PATH'].split(os.pathsep):
         if os.path.isdir(p):
-            os.add_dll_directory(p)
+            if not Path(p).is_absolute():        
+                p = Path(p).absolute().as_posix()
+            try:
+                os.add_dll_directory(p)
+            except Exception as e:
+                print("extension_ctypes : ", p, e)
     os.add_dll_directory(os.path.realpath(os.path.dirname(__file__)))
 
 # load dll or so file

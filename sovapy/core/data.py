@@ -487,9 +487,9 @@ class Atoms(object):
                 positions = list(map(lambda pos: volume.get_equivalent_point(pos,boundary_range[1]),
                                 positions))
         self.volume = volume
-        self.positions = np.array(positions, dtype=np.float64, copy=False)
+        self.positions = np.array(positions, dtype=np.float64)
         self.number = self.positions.shape[0]
-        self.elements = np.array(elements, dtype="|U4", copy=False)
+        self.elements = np.array(elements, dtype="|U4")
         self.numbers = dict(collections.Counter(self.elements))
         self.elements_kind = sorted([k for k, v in self.numbers.items() if v > 0])
         self.elements_count = [self.numbers[e] for e in self.elements_kind]        

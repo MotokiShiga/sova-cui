@@ -1,10 +1,9 @@
 import numpy as np
-from numpy import linalg
-import time, itertools, os, shutil, pickle, multiprocessing
+import itertools, os
 from concurrent.futures import ThreadPoolExecutor
 from concurrent import futures
 import networkx as nx
-from ..core.gridding import Grid
+# from ..core.gridding import Grid
 from functools import partial
 from tqdm import tqdm
 import copy
@@ -676,55 +675,6 @@ def enumerate_guttman_ring(atoms_extracted, atoms_all, chemical_bond_index):
         progress_bar.update()
         
     return set_rings
-    
-class Molecule:
-    """Load information of an atomic configuration
-    
-    The information of a configuration is loaded from a xyz or cfg (lammps) file
-    
-    Parameters
-    ----------
-    filename : str
-        File name of structure model (atomic symbols and coordinates).
-        
-    lattice_size : float, default=False, optional 
-        The length of a simulation box. Cubic is assumed in this class.
-        If lattice_size is None, a non-periodic structure is assumed.
-
-    
-    Attributes
-    ----------
-    num_atoms : int
-        The number of atoms in the lattice
-        
-    set_atoms : array (str)
-        The set of atomic symbols included in the structure
-        
-    atom_symbols : array (str) of shape (num_atoms,)
-        List of atomic symbols
-    
-    xyz : array (float) of shape (num_atoms, 3)
-        Atomic (x,y,z) coordinates
-        
-    chemical_bond_index_atoms : array (int) of shape (# of bonds, 2)
-        List of atom pairs which have a chemical bonds
-    
-    chemical_bond_index_cells : array (int) of shape(# of bonds, 3)
-        Indices of a super cell that the second atom of a bond is included.
-        The element must be one of {-1, 0, +1}.
-    
-    bond_pair_atom_symbols : list of list (str) of shape (2,)
-        List of paird atom symbols to make chemical bonds. 
-        
-    bond_pair_dist_max : list of list (int)
-        List of maximum lengths of chemical bonds between an atom pair. 
-        
-    bond_flag_periodicity : Boolean 
-        Whether periodic condition is assumed.    
-    """
-
-    def __init__(self):
-        pass
 
 class Ring(object):
             
@@ -805,7 +755,7 @@ class Ring(object):
                 return True
         return False
     
-class RINGs(Molecule):
+class RINGs:
     
     class RingType:
         GUTTMAN        = 0 # Guttman
@@ -910,7 +860,7 @@ class RINGs(Molecule):
         self.atom_symbols = np.array(self.atoms.elements)
         self.rings = []
             
-    def calculate(self, ring_type, pair_atom_symbols, p_pair=0.3,
+    def calculate(self, ring_type, pair_atom_symbols=None, p_pair=0.3,
                   cutoff_size=24, num_parallel=0, atoms_extracted=None, chain=False):
                 
         index_atoms = []
@@ -921,12 +871,16 @@ class RINGs(Molecule):
                     index_atoms.append([index, nei])
         index_atoms = np.array(index_atoms)
                 
-        # judge if the distance of each pairs of atoms is less than pair_dist
-        bool_bond = np.zeros(index_atoms.shape[0], dtype=bool)
-        for (a0, a1) in (pair_atom_symbols):
-            bool_bond = (((self.atom_symbols[index_atoms[:,0]]==a0) & (self.atom_symbols[index_atoms[:,1]]==a1)) \
-                | ((self.atom_symbols[index_atoms[:,0]]==a1) & (self.atom_symbols[index_atoms[:,1]]==a0))) | bool_bond
-        self.chemical_bond_index_atoms = index_atoms[bool_bond, :]
+        # If atom pairs are not specified, use all chemical bonds for ring enumeration
+        if pair_atom_symbols is None:
+            self.chemical_bond_index_atoms = index_atoms
+        # If atom pairs are specified, use chemical bonds between these pairs for ring enumeration
+        else:
+            bool_bond = np.zeros(index_atoms.shape[0], dtype=bool)
+            for (a0, a1) in (pair_atom_symbols):
+                bool_bond = (((self.atom_symbols[index_atoms[:,0]]==a0) & (self.atom_symbols[index_atoms[:,1]]==a1)) \
+                    | ((self.atom_symbols[index_atoms[:,0]]==a1) & (self.atom_symbols[index_atoms[:,1]]==a0))) | bool_bond
+            self.chemical_bond_index_atoms = index_atoms[bool_bond, :]
                 
         self.enumerate_ring(ring_type, cutoff_size, num_parallel, atoms_extracted)
         
