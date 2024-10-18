@@ -23,6 +23,8 @@ class Cavity(object):
         
     def calculate(self, resolution=64, cutoff_radii=None, gyration_tensor_parameters=False):
         self.resolution = resolution
+        self.cutoff_radii = cutoff_radii # to save calculation setting
+
         cachedir = './cache'
         cachepath = os.path.join(cachedir, 'discretization_cache.hdf5')
                 

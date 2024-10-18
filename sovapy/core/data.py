@@ -11,6 +11,7 @@ from .volumes import HexagonalVolume, NonVolume
 from ..config.configuration import config
 from . import gridding
 from ..computation.rings import Ring
+from ..computation.cavity import Cavity
 
 try:
     from util.logger import Logger
@@ -245,7 +246,6 @@ class CalculatedFrames(object):
                          self.surface_cavities.tostrlist(), overwrite)
             writedataset(h5group, "center_cavities",
                          self.center_cavities.tostrlist(), overwrite)
-
 
 class FileInfo(object):
     """
@@ -510,6 +510,7 @@ class Atoms(object):
                 for i3 in range(i1+1):
                     trio = '{0}-{1}-{2}'.format(symbol1, symbol2, self.symbols[i3])
                     self.trios.append(trio)
+    
     @property
     def covalence_radii(self):
         if self._covalence_radii is None:
@@ -1375,16 +1376,38 @@ class ResultsFile(Results):
                     self.rings.append(ring)
                     
             if 'domains' in f:
+                # group = f['domains']
+                # self.domains = Domains(group)
+                self._cavity = Cavity(self.atoms)
                 group = f['domains']
-                self.domains = Domains(group)
+                self._cavity.results = Results('test.xyz', 0, -1, self.atoms) #TODO
+                self._cavity.results.domains = Domains(group)
+
+                group_setting = f["cavity_setting"]
+                self._cavity.resolution = np.int64(group_setting["resolution"])
+
+                cutoff_radii = np.array(group_setting["cutoff_radii"])
+                if cutoff_radii.size == 1:
+                    if cutoff_radii == -1:
+                        self._cavity.cutoff_radii = None
+                    else:
+                        self._cavity.cutoff_radii = cutoff_radii
+                else:
+                        self._cavity.cutoff_radii = dict()
+                        for s in cutoff_radii:
+                            self._cavity.cutoff_radii[s[0].decode()] = float(s[1])
                 
             if 'surface_cavities' in f:
+                # group = f['surface_cavities']
+                # self.surface_cavities = Cavities(group)
                 group = f['surface_cavities']
-                self.surface_cavities = Cavities(group)
+                self._cavity.results.surface_cavities = Cavities(group)
                 
             if 'center_cavities' in f:
+                # group = f['center_cavities']
+                # self.center_cavities = Cavities(group)
                 group = f['center_cavities']
-                self.center_cavities = Cavities(group)
+                self._cavity.results.center_cavities = Cavities(group)
             
             #self._cavity.domains = self.domains
             #self._cavity.surface_cavities = self.surface_cavities
@@ -1411,6 +1434,18 @@ class ResultsFile(Results):
                 group['indexes'] = irings
                 
             if self.domains is not None:
+                group_setting = f.create_group("cavity_setting")
+                group_setting["resolution"] = self.cavity.resolution
+                if self.cavity.cutoff_radii is None:
+                    group_setting["cutoff_radii"] = -1
+                elif type(self.cavity.cutoff_radii) is dict:
+                    list_radii = list()
+                    for k, d in self.cavity.cutoff_radii.items():
+                        list_radii.append([k,str(d)])
+                    group_setting["cutoff_radii"] = list_radii
+                else:
+                    group_setting["cutoff_radii"] = self.cavity.cutoff_radii
+
                 group = f.create_group("domains")
                 self.domains.tohdf(group, overwrite)
             if self.surface_cavities is not None:

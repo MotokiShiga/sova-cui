@@ -24,7 +24,7 @@ print("The size of the 1st ring:", s1)
 
 # ### Calculate Cavity
 cavity = Cavity(atoms)
-cavity.calculate()
+cavity.calculate(resolution=64, cutoff_radii={'Si': 2.0, 'O': 3.0})
 
 num_dc1 = cavity.domains.number
 v1 = cavity.domains.volumes[0]
@@ -35,9 +35,8 @@ print("The volume of the 1st domain cavity:", v1)
 # Save file name
 path = "./a_SiO2_speed1e11K_rand.hdf5"
 
-with ResultsFile(path, 'w', atoms) as f:
+with ResultsFile(path, 'w', atoms=atoms, cavity=cavity) as f:
     f.rings = rings
-    f.domains = cavity.domains
     f.flush()
 
 
@@ -45,7 +44,7 @@ with ResultsFile(path, 'w', atoms) as f:
 with ResultsFile(path, 'r') as fr:
     result_atoms = fr.atoms
     result_rings = fr.rings
-    result_cavity = fr.domains
+    result_cavity = fr.cavity
 
 num_atoms = len(result_atoms.elements)
 print(type(result_atoms))
@@ -57,11 +56,12 @@ print(type(result_rings))
 print("The number of rings: ", num_rings2)
 print("The size of the 1st ring:", s2)
 
-num_dc2 = result_cavity.number
-v2 = result_cavity.volumes[0]
+num_dc2 = result_cavity.domains.number
+v2 = result_cavity.domains.volumes[0]
 print(type(result_cavity))
 print("The number of domain cavities: ", num_dc2)
 print("The volume of the 1st domain cavity:", v2)
+print("Calculation settings: resolution={:}, cutoff_radii={:}".format(result_cavity.resolution,result_cavity.cutoff_radii))
 
 
 
