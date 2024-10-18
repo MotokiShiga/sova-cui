@@ -1,4 +1,4 @@
-import os, sys
+import os, sys, re
 import collections
 import numpy as np
 import h5py
@@ -30,6 +30,12 @@ __all__ = ["Atoms",
            "ResultInfo",
            "CalculatedFrames",
            "Results"]
+
+# Get the current version number:
+cur_dirname =  os.path.dirname(__file__)
+file_version = os.path.join(cur_dirname, '..', '__init__.py')
+with open(file_version) as fv:
+    VERSION = re.search("__version__ = '(.*)'", fv.read()).group(1)
 
 def writedataset(h5group, name, data, overwrite=True):
     """
@@ -1354,6 +1360,10 @@ class ResultsFile(Results):
     
     def read(self):
         with h5py.File(self.filepath, "r") as f:
+
+            self.name    = f["name"][0].decode()
+            self.version = f["version"][0].decode()
+
             if 'atoms' in f:
                 group = f['atoms']
                 positions = np.array(group['positions'])
@@ -1415,6 +1425,10 @@ class ResultsFile(Results):
             
     def write(self, overwrite=True):
         with h5py.File(self.filepath, "w") as f:
+
+            f.create_dataset('name', data=["sovapy"])
+            f.create_dataset('version', data=[VERSION])
+
             group = f.create_group("atoms")
             group['positions'] = self.atoms.positions
             group['radii'] = self.atoms.radii

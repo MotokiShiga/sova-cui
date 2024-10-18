@@ -3,6 +3,9 @@ from sovapy.computation.rings import RINGs
 import numpy as np
 import matplotlib.pyplot as plt
 
+import sovapy
+print('sovapy ver: ', sovapy.__version__)
+
 # Load structural information from a cif file
 structure_file = "../data/crystal/sio2_beta_cristobalite333.cif"
 f = File.open(structure_file)

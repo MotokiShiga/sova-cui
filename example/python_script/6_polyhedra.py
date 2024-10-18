@@ -3,6 +3,8 @@ from sovapy.computation.structure_factor import polyhedra
 import matplotlib.pyplot as plt
 import numpy as np
 
+import sovapy
+print('sovapy ver: ', sovapy.__version__)
 
 # Load structural information from a xyz file
 structure_file = "../data/amorphous_md/a_SiO2_speed1e11K_rand.xyz"

@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 from sovapy.core.file import File
 from sovapy.computation.cavity import Cavity
 
+import sovapy
+print('sovapy ver: ', sovapy.__version__)
+
 ### Load structural information from a xyz file
 structure_file = "../data/amorphous_md/a_SiO2_speed1e11K_rand.xyz"
 f = File.open(structure_file)

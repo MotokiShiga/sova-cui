@@ -3,6 +3,9 @@ from sovapy.computation.structure_factor import (histogram,gr,total_gr,SQ,total_
                                     ncoeff,xcoeff,Gr,Tr,Nr)
 import matplotlib.pyplot as plt
 
+import sovapy
+print('sovapy ver: ', sovapy.__version__)
+
 # Load structural information from a cif file
 structure_file = "../data/crystal/sio2_beta_cristobalite222.cif"
 f = File.open(structure_file)

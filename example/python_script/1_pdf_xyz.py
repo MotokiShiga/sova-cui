@@ -3,6 +3,8 @@ from sovapy.computation.structure_factor import (histogram,gr,total_gr,SQ,total_
                                     ncoeff,xcoeff,Gr,Tr,Nr)
 import matplotlib.pyplot as plt
 
+import sovapy
+print('sovapy ver: ', sovapy.__version__)
 
 # Load structural information from a xyz file
 # The second line (CUB 24.713) in the xyz file indicates the shape of cell and its length.
