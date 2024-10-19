@@ -444,11 +444,25 @@ class Atoms(object):
             else:
                 volume = h5group.parent.attrs["volume"]
             volume = volumes.Volume.fromstring(str(volume))
+            if "bond_lengths" in h5group.attrs:
+                #TODO
+                bls = h5group["bond_lengths"]
+                bond_lengths = dict()
+                for s in bls:
+                    bond_lengths[(s[0].decode(),s[1].decode())] = float(s[2])
+            else:
+                bond_lengths = None
+
         elif isinstance(args[0], Atoms):
             atoms = args[0]
             volume = atoms.volume
             positions = atoms.positions
-            elements = atoms.elements        
+            elements = atoms.elements   
+            bond_lengths = atoms.bond_lengths
+            if bond_lengths is not None:
+                self.set_bond_lengths(bond_lengths)
+            else:
+                bond_lengths = None
         else:
             # In this case, atom positions may be outside of the volume
             positions = args[0]
@@ -466,6 +480,7 @@ class Atoms(object):
                 boundary_range = volume.periodic_boundary # boundary[min,max]
                 positions = list(map(lambda pos: volume.get_equivalent_point(pos,boundary_range[1]),
                                 positions))
+            bond_lengths = None
         self.volume = volume
         self.positions = np.array(positions, dtype=np.float64)
         self.number = self.positions.shape[0]
@@ -478,7 +493,6 @@ class Atoms(object):
         self._covalence_radii = None
         self._covalence_radii_by_element = None        
         self._bonds = None        
-        self.bond_lengths = None
         self.change_bond_lengths = False
         self.shifts = None
         self._colors = None
@@ -495,7 +509,9 @@ class Atoms(object):
         self.trios = None
         # initialize
         self.symbol_order()
-        self.set_bond_lengths()
+        # self.set_bond_lengths()
+        self.bond_lengths = bond_lengths
+        self.set_bond_lengths(bond_lengths) 
     
     def symbol_order(self,symbols=None):
         if symbols is None:
@@ -703,6 +719,14 @@ class Atoms(object):
                 logger.warn("Atom.elements contains default values. Not writing dataset.")
         else:
             writedataset(h5group, "elements", self.elements, overwrite)
+        #TODO
+        print("self.bond_lengths")
+        print(self.bond_lengths)
+        if self.bond_lengths is not None:
+            list_bond_lengths = list()
+            for a in self.bond_lengths.items():
+                list_bond_lengths.append(list(a[0])+[str(a[1])])
+            writedataset(h5group, "bond_lengths", list_bond_lengths, overwrite)
 
     def totxt(self, fmt):
         bond_file_name = fmt.format(property="bonds")
@@ -1370,7 +1394,16 @@ class ResultsFile(Results):
                 radii = np.array(group['radii'])
                 elements = [s.decode() for s in group['elements'][:]]
                 volume = group['volume'][0].decode()
+                if "bond_lengths" in group.keys():
+                    bls = group["bond_lengths"]
+                    bond_lengths = dict()
+                    for s in bls:
+                        bond_lengths[(s[0].decode(),s[1].decode())] = float(s[2])
+                else:
+                    bond_lengths = None
+                    
             self.atoms = Atoms(positions, radii, elements, volume)
+            self.atoms.set_bond_lengths(bond_lengths)
             
             if 'rings' in f:
                 group = f['rings']
@@ -1434,6 +1467,12 @@ class ResultsFile(Results):
             group['radii'] = self.atoms.radii
             group['elements'] = self.atoms.elements.tolist()
             group['volume'] = [str(self.atoms.volume)]
+
+            if self.atoms.bond_lengths is not None:
+                list_bond_lengths = list()
+                for a in self.atoms.bond_lengths.items():
+                    list_bond_lengths.append(list(a[0])+[str(a[1])])
+                group["bond_lengths"] = list_bond_lengths
             
             if self.rings is not None:
                 group = f.create_group("rings")

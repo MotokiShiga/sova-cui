@@ -10,12 +10,18 @@ print('sovapy ver: ', sovapy.__version__)
 structure_file = "../data/amorphous_md/a_SiO2_speed1e11K_rand.xyz"
 f = File.open(structure_file)
 
-
 ### Get atomic and cell (simulation box) data
 atoms = f.getatoms()
 
 num_atoms = len(atoms.elements)
 print("The number of atoms:", num_atoms)
+
+### Build chemical bonds
+bond_lengths = {('Si', 'O') : 2.0, ('Si', 'Si') : -1, ('O', 'O') : -1}
+atoms.set_bond_lengths(bond_lengths)
+
+atoms.bond_summary()
+print("")
 
 ### Calculate RINGs
 ring = RINGs(atoms)
@@ -65,6 +71,8 @@ print("")
 print(type(result_atoms))
 print("The number of atoms:", num_atoms)
 print("Atom symbols:", result_atoms.symbols)
+print("")
+result_atoms.bond_summary()
 
 num_rings2 = len(result_rings)
 s2 = result_rings[0].number
