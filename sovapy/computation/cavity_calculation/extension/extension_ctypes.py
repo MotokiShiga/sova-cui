@@ -8,6 +8,7 @@ import numpy as np
 from ctypes import c_int, c_int64, c_int8, POINTER, sizeof, CDLL, Structure, byref, c_float, cast
 import sys
 import os
+from pathlib import Path
 
 
 int_type = np.dtype(c_int)
