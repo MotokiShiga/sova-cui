@@ -1337,7 +1337,7 @@ class Results(object):
        
 class ResultsFile(Results):
     def __init__(self, file, mode, atoms=None,
-                 rings=None, cavity=None):
+                 cavity=None, rings_guttman=None, rings_king=None, rings_primitive=None):
                 
         self.mode = mode
         self._cavity = cavity
@@ -1351,13 +1351,25 @@ class ResultsFile(Results):
             surface_cavities = cavity.surface_cavities
             center_cavities = cavity.center_cavities
             
-        super().__init__(filepath=file, frame=0, resolution=0, 
-                         atoms=atoms, 
-                         domains=domains, 
-                         surface_cavities=surface_cavities,
-                         center_cavities=center_cavities,
-                         rings=rings, polyhedra=None,
-                         config=None)
+        # super().__init__(filepath=file, frame=0, resolution=0, 
+        #                  atoms=atoms, 
+        #                  domains=domains, 
+        #                  surface_cavities=surface_cavities,
+        #                  center_cavities=center_cavities,
+        #                  rings=rings, polyhedra=None,
+        #                  config=None)
+        self.filepath = file
+        self.frame = 0
+        self.resolution = 0
+        self.atoms = atoms
+        self.domains = domains
+        self.surface_cavities = surface_cavities
+        self.center_cavities = center_cavities
+        self.rings_guttman = rings_guttman
+        self.rings_king = rings_king
+        self.rings_primitive = rings_primitive
+        self.polyhedra = None
+        self.config = None
         
     def __enter__(self):
         if self.mode == 'r':
@@ -1405,10 +1417,10 @@ class ResultsFile(Results):
             self.atoms = Atoms(positions, radii, elements, volume)
             self.atoms.set_bond_lengths(bond_lengths)
             
-            if 'rings' in f:
-                group = f['rings']
+            if 'rings_guttman' in f:
+                group = f['rings_guttman']
                 irings = np.array(group['indexes']).tolist()
-                self.rings = []
+                self.rings_guttman = []
                 for iring in irings:
                     try:
                         i = iring.index(-1)
@@ -1416,7 +1428,33 @@ class ResultsFile(Results):
                     except ValueError:
                         indexes = iring               
                     ring = Ring(self.atoms, indexes)
-                    self.rings.append(ring)
+                    self.rings_guttman.append(ring)
+
+            if 'rings_king' in f:
+                group = f['rings_king']
+                irings = np.array(group['indexes']).tolist()
+                self.rings_king = []
+                for iring in irings:
+                    try:
+                        i = iring.index(-1)
+                        indexes = iring[:i]
+                    except ValueError:
+                        indexes = iring               
+                    ring = Ring(self.atoms, indexes)
+                    self.rings_king.append(ring)
+
+            if 'rings_primitive' in f:
+                group = f['rings_primitive']
+                irings = np.array(group['indexes']).tolist()
+                self.rings_primitive = []
+                for iring in irings:
+                    try:
+                        i = iring.index(-1)
+                        indexes = iring[:i]
+                    except ValueError:
+                        indexes = iring               
+                    ring = Ring(self.atoms, indexes)
+                    self.rings_primitive.append(ring)
                     
             if 'domains' in f:
                 # group = f['domains']
@@ -1474,20 +1512,45 @@ class ResultsFile(Results):
                     list_bond_lengths.append(list(a[0])+[str(a[1])])
                 group["bond_lengths"] = list_bond_lengths
             
-            if self.rings is not None:
-                group = f.create_group("rings")
+            if self.rings_guttman is not None:
+                group = f.create_group("rings_guttman")
                 # get max size
                 max_size = 0
-                for ring in self.rings:
+                for ring in self.rings_guttman:
                     max_size = max(max_size, len(ring.indexes))
-                ring = self.rings[0]
+                # ring = self.rings_guttman[0]
                 irings = []
-                for ring in self.rings:
+                for ring in self.rings_guttman:
+                    irings.append(ring.indexes + [-1]*(max_size-len(ring.indexes)))
+                group['indexes'] = irings
+            
+            if self.rings_king is not None:
+                group = f.create_group("rings_king")
+                # get max size
+                max_size = 0
+                for ring in self.rings_king:
+                    max_size = max(max_size, len(ring.indexes))
+                # ring = self.rings[0]
+                irings = []
+                for ring in self.rings_king:
+                    irings.append(ring.indexes + [-1]*(max_size-len(ring.indexes)))
+                group['indexes'] = irings
+
+            if self.rings_primitive is not None:
+                group = f.create_group("rings_primitive")
+                # get max size
+                max_size = 0
+                for ring in self.rings_primitive:
+                    max_size = max(max_size, len(ring.indexes))
+                # ring = self.rings[0]
+                irings = []
+                for ring in self.rings_primitive:
                     irings.append(ring.indexes + [-1]*(max_size-len(ring.indexes)))
                 group['indexes'] = irings
                 
             if self.domains is not None:
                 group_setting = f.create_group("cavity_setting")
+                self.resolution = self.cavity.resolution
                 group_setting["resolution"] = self.cavity.resolution
                 if self.cavity.cutoff_radii is None:
                     group_setting["cutoff_radii"] = -1

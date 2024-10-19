@@ -25,14 +25,15 @@ print("")
 
 ### Calculate RINGs
 ring = RINGs(atoms)
-rings = ring.calculate(ring_type=RINGs.RingType.GUTTMAN, 
-                       pair_atom_symbols=[['Si', 'O']])
+rings_guttman = ring.calculate(ring_type=RINGs.RingType.GUTTMAN)
+rings_king = ring.calculate(ring_type=RINGs.RingType.KING)
+# rings_primitive = ring.calculate(ring_type=RINGs.RingType.PRIMITIVE)
 
-num_rings1 = len(rings)
-s1 = rings[0].number
+num_rings1 = len(rings_guttman)
+s1 = rings_guttman[0].number
 print("")
-print("The number of rings: ", num_rings1)
-print("The size of the 1st ring:", s1)
+print("The number of Guttman rings: ", num_rings1)
+print("The size of the 1st Guttman ring:", s1)
 
 # ### Calculate Cavity
 cavity = Cavity(atoms)
@@ -49,17 +50,21 @@ print("The volume of the 1st domain cavity:", v1)
 path = "./a_SiO2_speed1e11K_rand.hdf5"
 
 with ResultsFile(path, 'w', atoms=atoms, cavity=cavity) as f:
-    f.rings = rings
+    f.rings_guttman = rings_guttman
+    f.rings_king = rings_king
+    # f.rings_primitive = rings_primitive
     f.flush()
 
 
 ### Read the file to load calculated results
 with ResultsFile(path, 'r') as fr:
-    result_atoms = fr.atoms
-    result_rings = fr.rings
-    result_cavity = fr.cavity
-    name = fr.name
-    version = fr.version
+    name                   = fr.name
+    version                = fr.version
+    result_atoms           = fr.atoms
+    result_rings_guttman   = fr.rings_guttman
+    result_rings_king      = fr.rings_king
+    # result_rings_primitive = fr.rings_primitive
+    result_cavity          = fr.cavity
 
 print("\n")
 print('Data information:')
@@ -74,12 +79,12 @@ print("Atom symbols:", result_atoms.symbols)
 print("")
 result_atoms.bond_summary()
 
-num_rings2 = len(result_rings)
-s2 = result_rings[0].number
+num_rings2 = len(result_rings_guttman)
+s2 = result_rings_guttman[0].number
 print("")
-print(type(result_rings))
-print("The number of rings: ", num_rings2)
-print("The size of the 1st ring:", s2)
+print(type(result_rings_guttman))
+print("The number of Guttman rings: ", num_rings2)
+print("The size of the 1st Guttman ring:", s2)
 
 num_dc2 = result_cavity.domains.number
 v2 = result_cavity.domains.volumes[0]
