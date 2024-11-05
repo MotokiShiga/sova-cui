@@ -1,5 +1,5 @@
 import numpy as np
-import itertools, os
+import itertools, os, logging
 from concurrent.futures import ThreadPoolExecutor
 from concurrent import futures
 import networkx as nx
@@ -194,7 +194,7 @@ def parallel_enumerate_primitive_ring(atoms_extracted, atoms_all, chemical_bond_
     
     return set_rings_all
 
-def enumerate_primitive_ring(atoms_extracted, atoms_all, chemical_bond_index, cutoff_size):
+def enumerate_primitive_ring(atoms_extracted, atoms_all, chemical_bond_index, cutoff_size, messenger=None):
     """Enumerate primitive rings
     
     Parameters
@@ -228,7 +228,12 @@ def enumerate_primitive_ring(atoms_extracted, atoms_all, chemical_bond_index, cu
     num = len(atoms_extracted)
     progress_bar = tqdm(total = num)
     
+    d_message = num//10
     for ic, n_source in enumerate(atoms_extracted):
+        if messenger is not None:
+            if (ic>0) and (ic%d_message)==0:
+                i_percent = int(np.round(ic/num*100,-1))
+                messenger.log('{:}% complete.'.format(i_percent), logging.INFO)
         length = D[n_source]
         for L in range(1,round(cutoff_size/2)+1):
             i = np.array(list(length.values()))==L
@@ -450,7 +455,7 @@ def parallel_enumerate_king_ring(atoms_extracted, atoms_all, chemical_bond_index
     
     return set_rings_all
 
-def enumerate_king_ring(atoms_extracted, atoms_all, chemical_bond_index, flag_primitive):
+def enumerate_king_ring(atoms_extracted, atoms_all, chemical_bond_index, flag_primitive, messenger=None):
     """enumerate King's rings and their primitive rings
     """
 
@@ -469,7 +474,13 @@ def enumerate_king_ring(atoms_extracted, atoms_all, chemical_bond_index, flag_pr
     num = len(atoms_extracted)
     progress_bar = tqdm(total = num)
     
+    d_message = num//10
     for ic, n in enumerate(atoms_extracted):
+        if messenger is not None:
+            if (ic>0) and (ic%d_message)==0:
+                i_percent = int(np.round(ic/num*100,-1))
+                messenger.log('{:}% complete.'.format(i_percent), logging.INFO)
+
         neighbors = list(nx.all_neighbors(G, n))
         if len(neighbors)>=2:
             for n0 in neighbors:
@@ -618,7 +629,7 @@ def parallel_enumerate_guttman_ring(atoms_extracted, atoms_all, chemical_bond_in
     
     return set_rings_all
 
-def enumerate_guttman_ring(atoms_extracted, atoms_all, chemical_bond_index):
+def enumerate_guttman_ring(atoms_extracted, atoms_all, chemical_bond_index, messenger=None):
     """enumerate Guttman's rings and their primitive rings
     """    
     
@@ -639,8 +650,13 @@ def enumerate_guttman_ring(atoms_extracted, atoms_all, chemical_bond_index):
     #progress(0)
     num = chemical_bond_index.shape[0]
     progress_bar = tqdm(total = num)
-    
+
+    d_message = chemical_bond_index.shape[0]//10
     for i in range(chemical_bond_index.shape[0]):
+        if messenger is not None:
+            if (i>0) and (i%d_message)==0:
+                i_percent = int(np.round(i/chemical_bond_index.shape[0]*100,-1))
+                messenger.log('{:}% complete.'.format(i_percent), logging.INFO)
         n0 = chemical_bond_index[i,0]
         n1 = chemical_bond_index[i,1]
         if (n0 in atoms_extracted)|(n1 in atoms_extracted):            
@@ -861,7 +877,7 @@ class RINGs:
         self.rings = []
             
     def calculate(self, ring_type, pair_atom_symbols=None, p_pair=0.3,
-                  cutoff_size=24, num_parallel=0, atoms_extracted=None, chain=False):
+                  cutoff_size=24, num_parallel=0, atoms_extracted=None, chain=False, messenger=None):
                 
         index_atoms = []
         #print(self.atoms.bonds)
@@ -882,11 +898,11 @@ class RINGs:
                     | ((self.atom_symbols[index_atoms[:,0]]==a1) & (self.atom_symbols[index_atoms[:,1]]==a0))) | bool_bond
             self.chemical_bond_index_atoms = index_atoms[bool_bond, :]
                 
-        self.enumerate_ring(ring_type, cutoff_size, num_parallel, atoms_extracted)
+        self.enumerate_ring(ring_type, cutoff_size, num_parallel, atoms_extracted, messenger=messenger)
         
         return self.rings
             
-    def enumerate_ring(self, ring_type, cutoff_size=None, num_parallel=0, atoms_extracted=None):
+    def enumerate_ring(self, ring_type, cutoff_size=None, num_parallel=0, atoms_extracted=None, messenger=None):
         """Enumerate rings
         
         Enumerate rings from a network generated from chemical bonds
@@ -919,19 +935,19 @@ class RINGs:
                 
         flag_type = True
         if (ring_type == RINGs.RingType.PRIMITIVE)&(num_parallel == 0):            
-            set_rings = enumerate_primitive_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms, cutoff_size)
+            set_rings = enumerate_primitive_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms, cutoff_size, messenger=messenger)
         elif (ring_type == RINGs.RingType.PRIMITIVE)&(num_parallel != 0):
             set_rings = parallel_enumerate_primitive_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms, 
                                                           cutoff_size, num_parallel=num_parallel)
         elif (ring_type == RINGs.RingType.PRIMITIVE_KING)&(num_parallel == 0):
             set_rings = enumerate_king_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms, flag_primitive=True)
         elif (ring_type == RINGs.RingType.KING)&(num_parallel == 0):
-            set_rings = enumerate_king_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms, flag_primitive=False)
+            set_rings = enumerate_king_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms, flag_primitive=False, messenger=messenger)
         elif (ring_type == RINGs.RingType.KING)&(num_parallel != 0):
             set_rings = parallel_enumerate_king_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms, \
                  flag_primitive=False, num_parallel=num_parallel)
         elif (ring_type == RINGs.RingType.GUTTMAN)&(num_parallel == 0):
-            set_rings = enumerate_guttman_ring(atoms_extracted, atoms_all,self.chemical_bond_index_atoms)
+            set_rings = enumerate_guttman_ring(atoms_extracted, atoms_all,self.chemical_bond_index_atoms, messenger=messenger)
         elif (ring_type == RINGs.RingType.GUTTMAN)&(num_parallel != 0):
             set_rings = parallel_enumerate_guttman_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms, 
                                                         num_parallel=num_parallel)
