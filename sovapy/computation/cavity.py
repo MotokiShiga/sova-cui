@@ -37,7 +37,10 @@ class Cavity(object):
         domain_calculation = DomainCalculation(discretization, atom_discretization)
 
         # Calculating domains
-        messenger.log("Calculating domains...", logging.INFO)
+        if messenger is not None:
+            messenger.log("Calculating cavity domains...", logging.INFO)
+        else:
+            print("Calculating cavity domains...")
         domains = data.Domains(domain_calculation)
         #print('Found {:d} domains'.format(len(domain_calculation.domain_volumes)))
         #index =  0
@@ -47,7 +50,10 @@ class Cavity(object):
         #    domain_calculation.critical_domains))
 
         # Calculating surface-based cavities
-        messenger.log("Calculating surface-based cavities...", logging.INFO)
+        if messenger is not None:
+            messenger.log("Calculating surface-based cavities...", logging.INFO)
+        else:
+            print("Calculating surface-based cavities...")
         cavity_calculation = CavityCalculation(domain_calculation, use_surface_points=True,
                                                gyration_tensor_parameters=gyration_tensor_parameters)
         surface_cavities = data.Cavities(cavity_calculation)
@@ -55,7 +61,10 @@ class Cavity(object):
 
         # Calculating center-based cavities
         # Calculating surface-based cavities
-        messenger.log("Calculating center-based cavities...", logging.INFO)
+        if messenger is not None:
+            messenger.log("Calculating center-based cavities...", logging.INFO)
+        else:
+            print("Calculating center-based cavities...")
         path = ''
         self.results = data.Results(path, 0, self.resolution, self.atoms,
                                domains=domains, 

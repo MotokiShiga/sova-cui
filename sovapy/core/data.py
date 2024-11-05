@@ -1464,6 +1464,10 @@ class ResultsFile(Results):
                 self._cavity.results = Results('test.xyz', 0, -1, self.atoms) #TODO
                 self._cavity.results.domains = Domains(group)
 
+                # Critical-domains are not saved automatically in sovapy.
+                if "critical_domains" in f:
+                    self._cavity.results.domains.critical_domains = list(f["critical_domains"])
+
                 group_setting = f["cavity_setting"]
                 self._cavity.resolution = np.int64(group_setting["resolution"])
 
@@ -1561,6 +1565,11 @@ class ResultsFile(Results):
                     group_setting["cutoff_radii"] = list_radii
                 else:
                     group_setting["cutoff_radii"] = self.cavity.cutoff_radii
+
+                # Critical-domains are not saved automatically in sovapy.
+                if "critical_domains" in f:
+                    del f["critical_domains"]
+                f["critical_domains"] = self.domains.critical_domains
 
                 group = f.create_group("domains")
                 self.domains.tohdf(group, overwrite)
