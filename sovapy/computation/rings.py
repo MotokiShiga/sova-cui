@@ -652,6 +652,8 @@ def enumerate_guttman_ring(atoms_extracted, atoms_all, chemical_bond_index, mess
     progress_bar = tqdm(total = num)
 
     d_message = chemical_bond_index.shape[0]//10
+    if d_message==0: #If the number of bonds is too small
+        d_message=1
     for i in range(chemical_bond_index.shape[0]):
         if messenger is not None:
             if (i>0) and (i%d_message)==0:
