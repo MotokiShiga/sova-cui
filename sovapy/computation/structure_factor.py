@@ -198,7 +198,6 @@ def histogram(atoms,dr,symbols=None,truncated=False):
 
     return r, histogram
 
-
 def ncoeff(symbols, frac, norm=True):
     
     FOUR_PI = 12.5663706143592  # 4*PI
@@ -469,9 +468,12 @@ def cosine(a, b, c):
     
     return cos_theta
 
-def triplets(atoms,bond_lengths,nth=10,norm_sin=True):
+def triplets(atoms, nth=10, norm_sin=True, bond_lengths=None):
     MAX_THETA = 10000
     
+    if bond_lengths is None:
+        bond_lengths = atoms.bond_lengths
+
     ntypes = len(atoms.symbols)
     nth = min(nth, MAX_THETA)
     ncth = np.zeros((nth+1,ntypes,ntypes,ntypes), dtype=np.int32)    

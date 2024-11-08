@@ -14,11 +14,12 @@ atoms = f.getatoms()
 
 print("Atom symbols:", atoms.symbols)
 
-# Thresholds of distance between atom pairs to enumerate neighbors
+# Build chemical bonds by setting maximum distances
 bond_lengths = {('Si', 'O') : 1.77, ('Si', 'Si') : 1.32, ('O', 'O') : 2.22}
+atoms.set_bond_lengths(bond_lengths) #build chemical bonds
 
 # Calculate bond angle distributions
-angle, hist = triplets(atoms, bond_lengths, 30)
+angle, hist = triplets(atoms, nth=30) 
 
 #Plot bond angle distributions
 w = angle[1]-angle[0]
