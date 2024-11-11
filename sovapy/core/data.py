@@ -566,7 +566,6 @@ class Atoms(object):
         else:
             shift = np.array(self.volume.Minv).dot(np.array([0.5,0.5,0.5]))
             if self._norm_positions is None:
-                print('vvvv ', self.volume.origin, shift)
                 inv = np.linalg.inv(self.volume.vectors)           
                 self._norm_positions = np.array(self.positions, dtype=np.float64)                
                 for i in range(self.number):
