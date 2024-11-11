@@ -428,6 +428,7 @@ class Atoms(object):
         None.
 
         """
+        
         if isinstance(args[0], h5py.Group):
             h5group = args[0]
             positions = h5group["positions"]
@@ -456,6 +457,7 @@ class Atoms(object):
         elif isinstance(args[0], Atoms):
             atoms = args[0]
             volume = atoms.volume
+                        
             positions = atoms.positions
             elements = atoms.elements   
             bond_lengths = atoms.bond_lengths
@@ -465,16 +467,18 @@ class Atoms(object):
                 bond_lengths = None
         else:
             # In this case, atom positions may be outside of the volume
+                        
             positions = args[0]
             radii = args[1]
             elements = args[2]
             volume = args[3]
+            
             is_norm = False
             if len(args) > 4:
                 is_norm = args[4]
                                 
             if isinstance(volume, str):
-                volume = volumes.Volume.fromstring(volume)
+                volume = volumes.Volume.fromstring(volume)                
 
             if volume is not None and volume.periodic == True:
                 boundary_range = volume.periodic_boundary # boundary[min,max]
@@ -556,13 +560,14 @@ class Atoms(object):
     def norm_positions(self):
         if self.volume.Minv is None:
             return None
-        self.is_norm = True
+        self.is_norm = True        
         if self.is_norm == False:
             return self.positions
         else:
             shift = np.array(self.volume.Minv).dot(np.array([0.5,0.5,0.5]))
             if self._norm_positions is None:
-                inv = np.linalg.inv(self.volume.vectors)                
+                print('vvvv ', self.volume.origin, shift)
+                inv = np.linalg.inv(self.volume.vectors)           
                 self._norm_positions = np.array(self.positions, dtype=np.float64)                
                 for i in range(self.number):
                     pos = self.positions[i] - self.volume.origin - shift
@@ -1406,6 +1411,7 @@ class ResultsFile(Results):
                 radii = np.array(group['radii'])
                 elements = [s.decode() for s in group['elements'][:]]
                 volume = group['volume'][0].decode()
+                origin = np.array(group['volume_origin'])                                
                 if "bond_lengths" in group.keys():
                     bls = group["bond_lengths"]
                     bond_lengths = dict()
@@ -1415,6 +1421,7 @@ class ResultsFile(Results):
                     bond_lengths = None
                     
             self.atoms = Atoms(positions, radii, elements, volume)
+            self.atoms.volume.origin = origin
             self.atoms.set_bond_lengths(bond_lengths)
             
             if 'rings_guttman' in f:
@@ -1509,6 +1516,7 @@ class ResultsFile(Results):
             group['radii'] = self.atoms.radii
             group['elements'] = self.atoms.elements.tolist()
             group['volume'] = [str(self.atoms.volume)]
+            group['volume_origin'] = self.atoms.volume.origin.tolist()
 
             if self.atoms.bond_lengths is not None:
                 list_bond_lengths = list()
