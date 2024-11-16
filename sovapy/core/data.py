@@ -1355,13 +1355,6 @@ class ResultsFile(Results):
             surface_cavities = cavity.surface_cavities
             center_cavities = cavity.center_cavities
             
-        # super().__init__(filepath=file, frame=0, resolution=0, 
-        #                  atoms=atoms, 
-        #                  domains=domains, 
-        #                  surface_cavities=surface_cavities,
-        #                  center_cavities=center_cavities,
-        #                  rings=rings, polyhedra=None,
-        #                  config=None)
         self.filepath = file
         self.frame = 0
         self.resolution = 0
@@ -1376,12 +1369,12 @@ class ResultsFile(Results):
         self.config = None
         
     def __enter__(self):
-        if self.mode == 'r':
+        if (self.mode == 'r') or (self.mode == 'a'):
             self.read()        
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if self.mode == 'w':
+        if (self.mode == 'w') or (self.mode == 'a'):
             self.write()
     
     @property
@@ -1463,14 +1456,11 @@ class ResultsFile(Results):
                     self.rings_primitive.append(ring)
                     
             if 'domains' in f:
-                # group = f['domains']
-                # self.domains = Domains(group)
                 self._cavity = Cavity(self.atoms)
                 group = f['domains']
                 self._cavity.results = Results('test.xyz', 0, -1, self.atoms) #TODO
                 self._cavity.results.domains = Domains(group)
 
-                # Critical-domains are not saved automatically in sovapy.
                 if "critical_domains" in f:
                     self._cavity.results.domains.critical_domains = list(f["critical_domains"])
 
@@ -1495,14 +1485,8 @@ class ResultsFile(Results):
                 self._cavity.results.surface_cavities = Cavities(group)
                 
             if 'center_cavities' in f:
-                # group = f['center_cavities']
-                # self.center_cavities = Cavities(group)
                 group = f['center_cavities']
                 self._cavity.results.center_cavities = Cavities(group)
-            
-            #self._cavity.domains = self.domains
-            #self._cavity.surface_cavities = self.surface_cavities
-            #self._cavity.center_cavities = self.center_cavities
             
     def write(self, overwrite=True):
         with h5py.File(self.filepath, "w") as f:
@@ -1573,7 +1557,6 @@ class ResultsFile(Results):
                 else:
                     group_setting["cutoff_radii"] = self.cavity.cutoff_radii
 
-                # Critical-domains are not saved automatically in sovapy.
                 if "critical_domains" in f:
                     del f["critical_domains"]
                 f["critical_domains"] = self.domains.critical_domains
