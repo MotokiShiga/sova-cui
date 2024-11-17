@@ -380,9 +380,50 @@ class ResultInfo(FileInfo):
             if info.hasdata():
                 subgroup = h5group.require_group("resolution{}".format(resolution))
                 info.tohdf(subgroup, overwrite)
-    
 
-    
+# This class preserves text data of structurral information loaded to Atoms objects
+class OriginalStructureData(object):
+
+    def __init__(self, filepath, text_data=None):
+        self.file_name = None       # Name of original data
+        self.structure_text = None  # Text of original data            
+
+        # Extract the file name from a full path
+        self.file_name = os.path.basename(filepath)
+
+        if text_data is None:
+            # Extract text data of structure information
+            if os.path.exists(filepath):
+                with open(filepath,'r') as f:
+                    text = f.readlines()
+                    self.structure_text = ''.join(text)
+            else:
+                print('{:} does NOT exist!'.format(filepath))
+        else:
+            self.structure_text = text_data
+
+    # Export original text data to a text file.
+    def export_txt(self, output_path=None):
+        
+        if output_path is None:
+            output_path = self.file_name
+
+        # Check the extension. Change it if necessary.
+        ori_ext = os.path.splitext(self.file_name)[-1]
+        prefix_name, out_ext = os.path.splitext(output_path)
+        if ori_ext != out_ext:
+            print('Extention is changed to "{:}" acoording to the original file.'.format(ori_ext))
+            output_path = prefix_name + ori_ext
+
+        # Save text data of structure information
+        if not os.path.exists(output_path):
+            with open(output_path,'w') as f:
+                f.write(self.structure_text)
+            print('Structure data has exported to {:}.'.format(output_path))
+        else:
+            print('{:} already exists! Choose another file name.'.format(output_path))
+        
+
 class Atoms(object):
     """
     This class represents a list of atoms and their properties.
@@ -429,6 +470,10 @@ class Atoms(object):
 
         """
         
+        # OriginalStructureData object 
+        # to preserve text data of structurral information
+        self.original_file_data = None
+
         if isinstance(args[0], h5py.Group):
             h5group = args[0]
             positions = h5group["positions"]
@@ -893,7 +938,6 @@ class CavitiesBase(object):
             if (is_numpy_array and len(value.shape) > 0) or (not is_numpy_array and len(value) > 0):
                 return value
         return None
-
 
 class Domains(CavitiesBase):
     """
@@ -1412,9 +1456,16 @@ class ResultsFile(Results):
                 else:
                     bond_lengths = None
                     
-            self.atoms = Atoms(positions, radii, elements, volume)
-            self.atoms.volume.origin = origin
-            self.atoms.set_bond_lengths(bond_lengths)
+                self.atoms = Atoms(positions, radii, elements, volume)
+                self.atoms.volume.origin = origin
+                self.atoms.set_bond_lengths(bond_lengths)
+
+                # Load original text data
+                if "original_data" in f:
+                    group = f.require_group("original_data")
+                    ori_name = group["file_name"][0].decode()
+                    ori_text = group["structure_text"][0].decode()
+                    self.atoms.original_file_data = OriginalStructureData(ori_name, ori_text)
             
             if 'rings_guttman' in f:
                 group = f['rings_guttman']
@@ -1500,6 +1551,16 @@ class ResultsFile(Results):
             group['elements'] = self.atoms.elements.tolist()
             group['volume'] = [str(self.atoms.volume)]
             group['volume_origin'] = self.atoms.volume.origin.tolist()
+
+            #Original text data
+            if (self.atoms.original_file_data is not None):
+                group = f.create_group('original_data')
+                dt = h5py.string_dtype()
+                ds_name = group.create_dataset('file_name', (1, ), dtype=dt, compression="gzip")
+                ds_name[0] = self.atoms.original_file_data.file_name
+                ds_txt = group.create_dataset('structure_text', (1, ), dtype=dt, compression="gzip")
+                ds_txt[0] = self.atoms.original_file_data.structure_text
+                
 
             if self.atoms.bond_lengths is not None:
                 list_bond_lengths = list()

@@ -122,7 +122,6 @@ class ResultFile(InputFile):
     def writeresults(self, results, overwrite=True):
         raise NotImplementedError
 
-
 class HDF5File(ResultFile):
     """
     Implementation on :class:`ResultFile` for 'hdf5' files.

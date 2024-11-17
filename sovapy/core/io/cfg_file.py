@@ -209,10 +209,13 @@ class CFGFile(InputFile):
                     self.info.volume.origin[0] = -vectors[0][0]
                     self.info.volume.origin[1] = -vectors[1][1]
                     self.info.volume.origin[2] = -vectors[2][2]
+
+                    atoms = data.Atoms(positions, None, symbols, self.info.volume, True)
+                    atoms.original_file_data = data.OriginalStructureData(self.path)
                     
                 except StopIteration:
                     raise IndexError("Frame {} not found".format(frame))
-            return data.Atoms(positions, None, symbols, self.info.volume, True)
+            return atoms
         except (IOError, IndexError):
             raise
         except Exception as e:

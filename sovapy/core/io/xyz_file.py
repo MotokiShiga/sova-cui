@@ -75,9 +75,13 @@ class XYZFile(InputFile):
                     else:
                         cx,cy,cz = np.array(self.info.volume.Minv).dot(np.array([0.5,0.5,0.5]))
                         self.info.volume.origin = np.array([-cx,-cy,-cz])
+
+                    atoms = data.Atoms(positions, None, symbols, self.info.volume)
+                    atoms.original_file_data = data.OriginalStructureData(self.path)
                 except StopIteration:
                     raise IndexError("Frame {} not found".format(frame))
-            return data.Atoms(positions, None, symbols, self.info.volume)
+
+            return atoms
         except (IOError, IndexError):
             raise
         #except Exception as e:

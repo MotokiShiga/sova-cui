@@ -128,7 +128,10 @@ class CIFFile(InputFile):
             positions = atoms_input.get_positions()
             
             self.info.volume.periodic_boundary = [0.0,1.0]
-            return data.Atoms(positions, None, symbols, self.info.volume)
+
+            atoms = data.Atoms(positions, None, symbols, self.info.volume)
+            atoms.original_file_data = data.OriginalStructureData(self.path)
+            return atoms
             
         except (IOError, IndexError):
             raise

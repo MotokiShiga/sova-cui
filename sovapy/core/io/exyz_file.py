@@ -93,7 +93,10 @@ class EXYZFile(InputFile):
                 symbols.append(atom.symbol)
                 positions.append(position)
             '''
-            return data.Atoms(positions, None, symbols, self.info.volume)
+
+            atoms = data.Atoms(positions, None, symbols, self.info.volume)
+            atoms.original_file_data = data.OriginalStructureData(self.path)
+            return atoms
         except Exception as e:
             raise FileError("Cannot read file info.", e)
     
