@@ -5,3 +5,4 @@ from . import elements
 from . import file
 from . import gridding
 from . import volumes
+from . import analysis

@@ -1561,7 +1561,8 @@ class ResultsFile(Results):
                 ds_txt = group.create_dataset('structure_text', (1, ), dtype=dt, compression="gzip")
                 ds_txt[0] = self.atoms.original_file_data.structure_text
                 
-
+            print('-----bond_lengths in Atoms')
+            print(self.atoms.bond_lengths)
             if self.atoms.bond_lengths is not None:
                 list_bond_lengths = list()
                 for a in self.atoms.bond_lengths.items():
