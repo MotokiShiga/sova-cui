@@ -74,7 +74,7 @@ class Analysis(object):
         pass
 
 
-class PDF_Analysis(Analysis):
+class PDFAnalysis(Analysis):
 
     def __init__(self, atoms, dr=0.05, dq=0.05, qmin=0.3, qmax=25.0):
         #Atoms object
@@ -227,8 +227,97 @@ class PDF_Analysis(Analysis):
                 self.Tr = np.array(f['pdf']['Tr'])
                 self.Nr = np.array(f['pdf']['Nr'])
 
+class CoordinationNumberAnalysis(Analysis):
 
-class BondAngle_Analysis(Analysis):
+    def __init__(self, atoms):
+        #Atoms object
+        self.atoms = atoms
+
+        # Variables to save results
+        
+        self.elems        = None  # List of elements (atoms)
+        self.coord_num    = None  # List of coordination numbers
+        self.list_counts  = None  # Counts (elems, coord_num)
+
+    # Input settings and run all computations for analysis
+    def run(self):
+
+        # Element list
+        self.elems = list(set(self.atoms.elements))
+
+        # List of coordination numbers
+        cnums = np.array([len(b) for b in self.atoms.bonds])
+        # Range of coordination numbers
+        cmin, cmax  = cnums.min(), cnums.max() 
+        # List of coordination numbers
+        self.coord_num = np.arange(cmin, cmax+1)
+
+
+        # Count coordination numbers of each element
+        num_elems = len(self.elems)
+        num_crange = cmax-cmin+1
+        self.list_counts = np.zeros((num_elems,num_crange))
+        for cnt, elem in enumerate(self.elems):
+            ids = np.array([i for i, s in enumerate(self.atoms.elements) if s == elem])
+            cnums_elem = cnums[ids]
+            j=0
+            for cn in self.coord_num:
+                self.list_counts[cnt,j] = cn
+                self.list_counts[cnt,j] = np.sum(cnums_elem==cn)
+                j += 1
+
+
+    # Plot all analysis results
+    def plot(self, figsize=None):
+        
+        num_elems = len(self.elems)
+        row_num = (num_elems//3)+1
+
+        if figsize is None:
+            figsize=(12, row_num*2.5)
+
+        fig = plt.figure(figsize=figsize) 
+        for i, elem in enumerate(self.elems):
+            ax = fig.add_subplot(row_num, 3, i+1)
+            plt.bar(self.coord_num, self.list_counts[i,:])
+            plt.xlabel('Coordination number of {:} atom'.format(elem))
+            plt.ylabel('Counts')
+            plt.xticks(self.coord_num)
+        plt.tight_layout()
+        plt.show()
+        
+
+    # Save analysis results to hdf5
+    def save_to_hdf5(self):
+
+        ori_fname = self.atoms.original_file_data.file_name
+        hdf5_path = os.path.splitext(ori_fname)[0] + '.hdf5'
+
+        with h5py.File(hdf5_path, "a") as f:
+            if 'coordination_number' in f:
+                del f['coordination_number']         
+            group = f.create_group("coordination_number")
+
+            num_elems = len(self.elems)
+            str_dtype = h5py.special_dtype(vlen=str)
+            dataset = group.create_dataset('elements', shape=(num_elems,), dtype=str_dtype)
+            for i, a in enumerate(self.elems):
+                dataset[0] = a
+
+            group['coord_num'] = self.coord_num
+            group['list_counts'] = self.list_counts
+
+    # Load analysis results from hdf5
+    def load_hdf5(self, hdf5_path):
+        with h5py.File(hdf5_path, "r") as f:                
+            if 'coordination_number' in f:
+                elems = list(f['coordination_number']['elements'])
+                self.elems = [a.decode() for a in elems]
+                self.coord_num = np.array(f['coordination_number']['coord_num'])
+                self.list_counts = np.array(f['coordination_number']['list_counts'])
+
+
+class BondAngleAnalysis(Analysis):
 
     def __init__(self, atoms, bins=100):
         #Atoms object
@@ -330,7 +419,7 @@ class BondAngle_Analysis(Analysis):
                 self.trios = np.array(trios)
 
 
-class Tetrahedral_Order_Analysis(Analysis):
+class TetrahedralOrderAnalysis(Analysis):
 
     def __init__(self, atoms, bins=100, list_cc_dist=None):
         #Atoms object
@@ -449,7 +538,7 @@ class Tetrahedral_Order_Analysis(Analysis):
                 print('ERROR: "tetrahedral order data does NOT contain!"')
 
 
-class Ring_Analysis(Analysis):
+class RingAnalysis(Analysis):
 
     def __init__(self, atoms, guttman=True, king=False, primitive=False, cutoff_primitive=24, num_parallel=-1, close=True):
         #Atoms object
@@ -656,13 +745,12 @@ class Ring_Analysis(Analysis):
                     irings.append(ring.indexes + [-1]*(max_size-len(ring.indexes)))
                 group['indexes'] = irings
                 
-
     # Load analysis results from hdf5
     def load_hdf5(self, hdf5_path):
         
         with h5py.File(hdf5_path, "r") as f:
             # # Load rings
-            if f.rings_guttman is not None:
+            if 'rings_guttman' in f:
                 self.guttman_ring = RINGs(self.atoms)
                 group = f['rings_guttman']
                 irings = np.array(group['indexes']).tolist()
@@ -675,7 +763,7 @@ class Ring_Analysis(Analysis):
                         indexes = iring               
                     ring = Ring(self.atoms, indexes)
                     self.guttman_ring.rings.append(ring)
-            if f.rings_king is not None:
+            if 'rings_king' in f:
                 self.king_ring = RINGs(self.atoms)
                 group = f['rings_king']
                 irings = np.array(group['indexes']).tolist()
@@ -688,7 +776,7 @@ class Ring_Analysis(Analysis):
                         indexes = iring               
                     ring = Ring(self.atoms, indexes)
                     self.king_ring.rings.append(ring)
-            if f.rings_primitive is not None:
+            if 'rings_primitive' in f:
                 self.primitive_ring = RINGs(self.atoms)
                 group = f['rings_primitive']
                 irings = np.array(group['indexes']).tolist()
@@ -703,7 +791,7 @@ class Ring_Analysis(Analysis):
                     self.primitive_ring.rings.append(ring)
 
 
-class Cavity_Analysis(Analysis):
+class CavityAnalysis(Analysis):
 
     def __init__(self, atoms, resolution=128, cutoff_radii=2.8 ):
         #Atoms object
