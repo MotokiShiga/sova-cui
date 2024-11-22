@@ -9,7 +9,7 @@ print('sovapy ver: ', sovapy.__version__)
 # Load structural information from a xyz file
 # The second line (CUB 24.713) in the xyz file indicates the shape of cell and its length.
 # (CUB means cubics.)
-structure_file = "../data/amorphous_md/a_SiO2_speed1e11K_rand.xyz"
+structure_file = "../data/amorphous_md/a_SiO2_speed1e11K.xyz"
 f = File.open(structure_file)
 
 # Get atomic and cell (simulation box) data
