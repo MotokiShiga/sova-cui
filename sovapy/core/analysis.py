@@ -302,7 +302,7 @@ class CoordinationNumberAnalysis(Analysis):
             str_dtype = h5py.special_dtype(vlen=str)
             dataset = group.create_dataset('elements', shape=(num_elems,), dtype=str_dtype)
             for i, a in enumerate(self.elems):
-                dataset[0] = a
+                dataset[i] = a
 
             group['coord_num'] = self.coord_num
             group['list_counts'] = self.list_counts
