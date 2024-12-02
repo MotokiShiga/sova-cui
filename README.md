@@ -88,3 +88,12 @@ SOVA reuses source codes of the following package:
 8_cavity        : Cavity analysis (amorphous SiO2)
 9_save_result   : Save and load calculated results
 ``` 
+
+## Citation
+
+We are preaparing a manuscript for this package. Before the publication, you should cite this url and the following papers.
+If you have implemented ring analysis, please cite the original papers of ring definitions (Guttman, King, and Primitive) and our paper:
+[1] M. Shiga, A. Hirata, Y. Onodera, H. Masai, Ring-originated anisotropy of local structural ordering in amorphous and crystalline silicon dioxide. Commun. Mater. 4, 91 (2023). https://doi.org/10.1038/s43246-023-00416-w
+
+For cavity analysis, please cite  
+[2] I. Meyer, F. Rhiem, F. Beule, D. Knodt, J. Heinen, R. O. Jones, pyMolDyn: Identification, structure, and properties of cavities/vacancies in condensed matter, J. Comput. Chem., 38, 389–394 (2017). https://doi.org/10.1002/jcc.24697
