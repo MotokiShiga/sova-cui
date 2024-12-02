@@ -92,7 +92,7 @@ SOVA reuses source codes of the following package:
 ## Citation
 
 We are preaparing a manuscript for this package. Before the publication, you should cite this url and the following papers.
-If you have implemented ring analysis, please cite the original papers of ring definitions (Guttman, King, and Primitive) and our paper:
+If you have implemented ring analysis, please cite the original papers of ring definitions (Guttman, King, and Primitive) and our paper:  
 [1] M. Shiga, A. Hirata, Y. Onodera, H. Masai, Ring-originated anisotropy of local structural ordering in amorphous and crystalline silicon dioxide. Commun. Mater. 4, 91 (2023). https://doi.org/10.1038/s43246-023-00416-w
 
 For cavity analysis, please cite  
