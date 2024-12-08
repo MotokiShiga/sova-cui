@@ -29,5 +29,7 @@ link /nologo /INCREMENTAL:NO /LTCG /DLL /MANIFEST:EMBED,ID=2 /MANIFESTUAC:NO alg
 
 del /f *.obj *.lib *.exp
 
+cd ../../../../
+
 rem If you meet problems of dll dependencies, run "dumpbin /DEPENDENTS  xxx.dll".
 rem Command dumpbin is useful to check dependent dll files.
