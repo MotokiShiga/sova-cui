@@ -18,7 +18,6 @@ pip install sovapy
   And move to the downloaded directory
   ```sh
   cd sova-cui
-  bash 
   ```
 
 2. To compile and to generate so or dll files, run  
