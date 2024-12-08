@@ -226,7 +226,8 @@ def enumerate_primitive_ring(atoms_extracted, atoms_all, chemical_bond_index, cu
     set_rings=set()
     #progress(0)
     num = len(atoms_extracted)
-    progress_bar = tqdm(total = num)
+    if messenger is None:
+        progress_bar = tqdm(total = num)
     
     d_message = num//10
     for ic, n_source in enumerate(atoms_extracted):
@@ -334,7 +335,8 @@ def enumerate_primitive_ring(atoms_extracted, atoms_all, chemical_bond_index, cu
                                     set_rings.add(path)
                                     
         #progress(int((ic+1)/num*100))
-        progress_bar.update()
+        if messenger is None:
+            progress_bar.update()
         
     #finish()
     
@@ -472,7 +474,8 @@ def enumerate_king_ring(atoms_extracted, atoms_all, chemical_bond_index, flag_pr
         G.add_edges_from(chemical_bond_index)
     #progress(0)
     num = len(atoms_extracted)
-    progress_bar = tqdm(total = num)
+    if messenger is None:
+        progress_bar = tqdm(total = num)
     
     d_message = num//10
     for ic, n in enumerate(atoms_extracted):
@@ -516,7 +519,8 @@ def enumerate_king_ring(atoms_extracted, atoms_all, chemical_bond_index, flag_pr
                 else:
                     G.add_edge(n, n0)
         #progress(int((ic+1)/num*100))
-        progress_bar.update()
+        if messenger is None:
+            progress_bar.update()
         
     if not(flag_primitive):
         #finish()
@@ -649,7 +653,8 @@ def enumerate_guttman_ring(atoms_extracted, atoms_all, chemical_bond_index, mess
         
     #progress(0)
     num = chemical_bond_index.shape[0]
-    progress_bar = tqdm(total = num)
+    if messenger is None:
+        progress_bar = tqdm(total = num)
 
     d_message = chemical_bond_index.shape[0]//10
     if d_message==0: #If the number of bonds is too small
@@ -690,7 +695,8 @@ def enumerate_guttman_ring(atoms_extracted, atoms_all, chemical_bond_index, mess
             else:
                 G.add_edge(n0, n1)            
         #progress(int((i+1)/num*100))
-        progress_bar.update()
+        if messenger is None:
+            progress_bar.update()
         
     return set_rings
 
