@@ -4,8 +4,13 @@ import matplotlib.pyplot as plt
 
 from .data import ResultsFile
 
-from ..computation.structure_factor import (histogram,gr,total_gr,SQ,total_SQ,total_FQ,
-                                    ncoeff,xcoeff,Gr,Tr,Nr)
+# from ..computation.structure_factor import (histogram,gr,total_gr,SQ,total_SQ,total_FQ,
+#                                     ncoeff,xcoeff,Gr,Tr,Nr)
+from sovapy.computation.structure_factor import (atom_pair_hist, pair_dist_func, 
+                                                 partial_structure_factor, atomc_pair_dist_func_neutron,
+                                                 structure_factor_neutron, structure_factor_xray,
+                                                 reduced_pair_dist_func, total_corr_fun, radial_dist_fun,
+                                                 ncoeff, xcoeff)
 from ..computation.structure_factor import triplets
 from ..computation.structure_factor import polyhedra
 from ..computation.rings import RINGs, Ring
@@ -89,94 +94,100 @@ class PDFAnalysis(Analysis):
         # Variables to save results
         self.r = None
         self.q = None
-        self.gr = None
-        self.total_gr = None
-        self.sq = None
-        self.total_sq = None
-        self.fq = None
-        self.Gr = None
-        self.Tr = None
-        self.Nr = None
+        self.partial_gr = None
+        self.gr_neutron = None
+        self.partial_sq = None
+        self.sq_neutron = None
+        self.sq_xray = None
+        self.Gr_neutron = None
+        self.Tr_neutron = None
+        self.Nr_neutron = None
 
     # Input settings and run all computations for analysis
     def run(self):
-        # Histograms of distances between atom pairs
-        r, hist = histogram(self.atoms, self.dr)
+        #Histogram of atom-pair distances
+        # (The number of atoms at a distance between r and r+dr from a given atom.)
+        self.r, hist = atom_pair_hist(self.atoms, self.dr)
 
-        # Calculate PDF functions
-        # Calculate g(r)
-        self.r, self.gr = gr(self.atoms, hist, self.dr)
+        # Calculate Pair distribution function (PDF) g_{ab}(r) functions
+        self.r, self.partial_gr = pair_dist_func(self.atoms, hist, self.dr)
 
-        # Calculate Total g(r)
-        coeff = ncoeff(self.atoms.symbols, self.atoms.frac)
-        self.total_gr = total_gr(self.gr, coeff)
+        #Calculate related to neutron diffraction
+        coeff_neutron = ncoeff(self.atoms.symbols, self.atoms.frac)
 
-        # Calculate S(Q)
-        self.q, self.sq = SQ(self.atoms, self.gr, self.qmin, self.qmax, self.dr, self.dq)
+        # Calculate atomic pair distribution function for (neutron beam) g(r)
+        self.gr_neutron = atomc_pair_dist_func_neutron(self.partial_gr, coeff_neutron)
 
-        # Calculate Total S(Q)
-        self.total_sq = total_SQ(self.sq, coeff)
+        # Calculate Partial structure factors S{ab}(Q)
+        self.q, self.partial_sq = partial_structure_factor(self.atoms, self.partial_gr, self.qmin, self.qmax, self.dr, self.dq)
 
-        # Calculate F(Q)
-        coeff = xcoeff(self.atoms.symbols, self.atoms.frac, self.q)
-        self.fq = total_FQ(self.sq, coeff)
+        # Calculate structure factor by neutron beam diffraction S_N(Q)
+        self.sq_neutron = structure_factor_neutron(self.partial_sq, coeff_neutron)
 
-        # Calculate Gr
-        rho = self.atoms.rho
-        self.Gr = Gr(self.r, self.total_gr, rho)
+        #Calculate related to X-ray diffraction
+        coeff_xray = xcoeff(self.atoms.symbols, self.atoms.frac, self.q)
 
-        # Calculate Tr
-        self.Tr = Tr(self.r, self.total_gr, rho)
+        # Calculate structure factor by X-ray beam diffraction S_X(Q)
+        self.sq_xray = structure_factor_xray(self.partial_sq, coeff_xray)
 
-        # Calculate Nr
-        self.Nr = Nr(self.r, self.Tr)
+        # Atomic number density
+        rho = self.atoms.rho 
+
+        # Reduced atomic pair distribution function by neutron beam G(r)
+        self.Gr_neutron = reduced_pair_dist_func(self.r, self.gr_neutron, rho)
+
+        # Total correlation function by neutron beam T(r)
+        self.Tr_neutron = total_corr_fun(self.r, self.gr_neutron, rho)
+
+        # Calculate radial_dist_fun by neutron beam N(r)
+        self.Nr_neutron = radial_dist_fun(self.r, self.gr_neutron, rho)
 
     # Plot all analysis results
     def plot(self, figsize=(18, 8)):
         fig = plt.figure(figsize=figsize) 
         ax = fig.add_subplot(2, 4, 1)
         for i in range(3):    
-            ax.plot(self.r, self.gr.T[i], label=self.atoms.pairs[i])
-            ax.set_xlabel('r(Å)')
+            ax.plot(self.r, self.partial_gr.T[i], label=self.atoms.pairs[i])
+            ax.set_xlabel('r (Angstrom)')
             ax.set_ylabel('Partial g(r)')
             ax.legend()
 
         ax = fig.add_subplot(2, 4, 2)
-        ax.set_xlabel('r(Å)')
-        ax.set_ylabel('Total g(r)')
-        ax.plot(self.r, self.total_gr)
+        ax.set_xlabel('r (Angstrom)')
+        ax.set_ylabel('Atomic PDF (Neutron) g(r)')
+        ax.plot(self.r, self.gr_neutron)
 
         ax = fig.add_subplot(2, 4, 3)
         for i in range(3):    
-            ax.plot(self.q, self.sq.T[i], label=self.atoms.pairs[i])
-            ax.set_xlabel('Q(Å^-1)')
-            ax.set_ylabel('Partial S(Q)')
+            ax.plot(self.q, self.partial_sq.T[i], label=self.atoms.pairs[i])
+            ax.set_xlabel('Q (Angstrom^(-1))')
+            ax.set_ylabel('Partial structure factor S(Q)')
             ax.legend()
 
         ax = fig.add_subplot(2, 4, 4)
-        ax.set_xlabel('Q(Å^-1)')
-        ax.set_ylabel('Total Neutron S(Q)')
-        ax.plot(self.q, self.total_sq)
+        ax.set_xlabel('Q (Angstrom^(-1))')
+        ax.set_ylabel('Structure factor by Neutron SN(Q)')
+        ax.plot(self.q, self.sq_xray)
 
         ax = fig.add_subplot(2, 4, 5)
-        ax.set_xlabel('Q(Å^-1)')
-        ax.set_ylabel('Total X-ray S(Q)')
-        ax.plot(self.q, self.fq)
+        ax.set_xlabel('Q (Angstrom^(-1))')
+        ax.set_ylabel('Structure factor by X-ray SX(Q)')
+        ax.plot(self.q, self.sq_xray)
 
         ax = fig.add_subplot(2, 4, 6)
-        ax.set_xlabel('r(Å)')
-        ax.set_ylabel('G(r)')
-        ax.plot(self.r, self.Gr)
+        ax.set_xlabel('r (Angstrom)')
+        ax.set_ylabel('Reduced atomic PDF G(r)')
+        ax.plot(self.r, self.Gr_neutron)
 
         ax = fig.add_subplot(2, 4, 7)
-        ax.set_xlabel('r(Å)')
-        ax.set_ylabel('T(r)')
-        ax.plot(self.r, self.Tr)
+        ax.set_xlabel('r (Angstrom)')
+        ax.set_ylabel('Total correlation function T(r)')
+        ax.plot(self.r, self.Tr_neutron)
 
         ax = fig.add_subplot(2, 4, 8)
-        ax.set_xlabel('r(Å)')
-        ax.set_title('N(r)')
-        ax.plot(self.r, self.Nr)
+        ax.set_xlabel('r (Angstrom)')
+        ax.set_ylabel('Radial distribution function N(r)')
+        ax.plot(self.r, self.Nr_neutron)
 
         plt.subplots_adjust(wspace=0.3)
         plt.subplots_adjust(hspace=0.3)
@@ -192,40 +203,41 @@ class PDFAnalysis(Analysis):
             print('saving pdf.....')
             if 'pdf' in f:
                 del f['pdf']
-            group             = f.create_group("pdf")
-            group['dr']       = self.dr
-            group['dq']       = self.dq
-            group['qmin']     = self.qmin
-            group['qmax']     = self.qmax
-            group['r']        = self.r
-            group['q']        = self.q
-            group['gr']       = self.gr
-            group['total_gr'] = self.total_gr
-            group['sq']       = self.sq
-            group['total_sq'] = self.total_sq
-            group['fq']       = self.fq
-            group['Gr']       = self.Gr
-            group['Tr']       = self.Tr
-            group['Nr']       = self.Nr
+            group               = f.create_group("pdf")
+            group['dr']         = self.dr
+            group['dq']         = self.dq
+            group['qmin']       = self.qmin
+            group['qmax']       = self.qmax
+            group['r']          = self.r
+            group['q']          = self.q
+            group['partial_gr'] = self.partial_gr
+            group['gr_neutron'] = self.gr_neutron
+            group['partial_sq'] = self.partial_sq
+            group['sq_neutron'] = self.sq_neutron
+            group['sq_xray']    = self.sq_xray
+            group['Gr_neutron'] = self.Gr_neutron
+            group['Tr_neutron'] = self.Tr_neutron
+            group['Nr_neutron'] = self.Nr_neutron
 
     # Load analysis results from hdf5
     def load_hdf5(self, hdf5_path):
         with h5py.File(hdf5_path, "r") as f:   
             if 'pdf' in f:
-                self.dr = float(np.array(f['pdf']['dr']))
-                self.dq = float(np.array(f['pdf']['dr']))
-                self.qmin = float(np.array(f['pdf']['qmin']))
-                self.qmax = float(np.array(f['pdf']['qmax']))
-                self.r = np.array(f['pdf']['r']) 
-                self.q = np.array(f['pdf']['q'])
-                self.gr = np.array(f['pdf']['gr'])
-                self.total_gr = np.array(f['pdf']['total_gr'])
-                self.sq = np.array(f['pdf']['sq'])
-                self.total_sq = np.array(f['pdf']['total_sq'])
-                self.fq = np.array(f['pdf']['fq'])
-                self.Gr = np.array(f['pdf']['Gr'])
-                self.Tr = np.array(f['pdf']['Tr'])
-                self.Nr = np.array(f['pdf']['Nr'])
+                self.dr         = float(np.array(f['pdf']['dr']))
+                self.dq         = float(np.array(f['pdf']['dr']))
+                self.qmin       = float(np.array(f['pdf']['qmin']))
+                self.qmax       = float(np.array(f['pdf']['qmax']))
+                self.r          = np.array(f['pdf']['r']) 
+                self.q          = np.array(f['pdf']['q'])
+                self.partial_gr = np.array(f['pdf']['partial_gr'])
+                self.gr_neutron = np.array(f['pdf']['gr_neutron'])
+                self.partial_sq = np.array(f['pdf']['partial_sq'])
+                self.sq_neutron = np.array(f['pdf']['sq_neutron'])
+                self.sq_xray    = np.array(f['pdf']['sq_xray'])
+                self.Gr_neutron = np.array(f['pdf']['Gr_neutron'])
+                self.Tr_neutron = np.array(f['pdf']['Tr_neutron'])
+                self.Nr_neutron = np.array(f['pdf']['Nr_neutron'])
+
 
 class CoordinationNumberAnalysis(Analysis):
 

@@ -13,98 +13,40 @@ except ImportError:
     has_hist = False
     print('Warning calculate histogram is slow')
 
-def gr(atoms,histogram,dr):
-    numbers = atoms.ni
-    vectors = atoms.volume.vectors
-    _gr = np.zeros_like(histogram, dtype=float)
-    nr, npar = histogram.shape  
-    _volume = volume(vectors)
-    ntypes = len(numbers)
-    nxn = np.zeros(npar)
-    _r = np.zeros(nr)
-    
-    ic = 0
-    for itype in range(ntypes):
-        for jtype in range(itype, ntypes):
-            nxn[ic] = numbers[itype]*numbers[jtype]
-            #ic = int(itype*(2*ntypes-itype-1)/2+jtype)
-            if(itype != jtype):
-                nxn[ic] = nxn[ic]*2
-            ic += 1
-    
-    for ir in range(1, nr):
-        _r[ir] = ir*dr
-        gnorm = (3.0*ir*ir+0.25)*dr*dr*dr*2.0*np.pi/(3.0*_volume)
-        for ic in range(npar):
-            _gr[ir,ic] = histogram[ir][ic]/(gnorm*nxn[ic])
-    
-    return _r, _gr
+# def histogram(atoms, dr, symbols=None, truncated=False):
+def atom_pair_hist(atoms, dr, symbols=None, truncated=False):
+    """
+    Histogram of atom-pair distances
+    (The number of atoms at a distance between r and r+dr from a given atom.)
 
-def total_gr(gr,coeff):
-    nr, npar = gr.shape
-    _total_gr = np.zeros(nr)
-    for ir in range(nr):
-        for ic in range(npar):
-            _total_gr[ir] += coeff[ic]*(gr[ir][ic]-1.0)
-    return _total_gr + 1.0
+    Parameters
+    ----------
+    atoms : Atoms object
+        structural data including atomic symbol, position, lattice info,...
+    dr : float
+        distance interval (bin width) in the histogram
+    symbols : list, optional
+        indicates the order of atom-pairs
+    trucated : Bool, optional
+        truncated for large distance?
 
-def SQ(atoms,gr,qmin,qmax,dr,dq):
-    n = atoms.number
-    _volume = volume(atoms.volume.vectors)
-    nq = int(math.ceil((qmax-qmin)/dq))+1
-    q =np.array([(qmin+float(i)*dq) for i in range(nq)])
-    nr, npar = gr.shape
-    sqr = np.zeros((nr, nq+1), dtype=float)
-    _sq = np.zeros((nq, npar), dtype=float)
-    
-    for iq in range(nq):
-        s = np.zeros(npar)
-        for ir in range(1, nr):
-            r = float(ir)*dr
-            sqr = 4.0*np.pi*float(n)/_volume*r*np.sin(r*q[iq])/q[iq]*dr
-            for ic in range(npar):
-                s[ic] += (gr[ir][ic]-1.0)*sqr
-        
-        _sq[iq] = s
-    
-    return q, _sq+1.0
+    Returns
+    -------
+    r : array-like of shape (# of bins)
+        the list of atoms pair distances
+    histogram : array-like of shape (len(r), # of atom pairs)
+        the number of atoms at distance r from the center atom
 
-def total_SQ(sq,coeff):
-    nq, npar = sq.shape
-    total_sq = np.zeros(nq)
-    for iq in range(nq):
-        for ic in range(npar):
-            total_sq[iq] += coeff[ic]*sq[iq,ic]
-            
-    return total_sq
+    """
 
-def total_FQ(sq,coeff):
-    nq, npar = sq.shape
-    total_fq = np.zeros(nq)
-    for i in range(nq):
-        for j in range(npar):
-            total_fq[i] += (sq[i][j]*coeff[i][j])
-    return total_fq
-
-def Gr(r,total_gr,rho):
-    Gr = 4.*np.pi*r*rho*total_gr
-    return Gr
-  
-def Tr(r,total_gr,rho):  
-    Tr = 4.*np.pi*r*rho*(total_gr+1.0)
-    return Tr
-
-def Nr(r,Tr):
-    Nr = r*Tr
-    return Nr
-
-def histogram(atoms,dr,symbols=None,truncated=False):
     elements = atoms.elements 
+
     def sign(a, b):
         if(b >= 0.0):
             return math.fabs(a)
         else:
             return -math.fabs(a)
+        
     if symbols is None:
         atomic_numbers = numbers
     else:
@@ -198,7 +140,270 @@ def histogram(atoms,dr,symbols=None,truncated=False):
 
     return r, histogram
 
+# def gr(atoms, histogram, dr):
+def pair_dist_func(atoms, histogram, dr):
+    """
+    Pair distribution function
+
+    Parameters
+    ----------
+    atoms : Atoms object
+        structural data including atomic symbol, position, lattice info,...
+    histogram : array-like of shape (len(r), # of atom pairs) 
+        the number of atoms at distance r from the center atom
+    dr : float
+        distance interval (bin width) in the histogram
+
+    Returns
+    -------
+    r : array-like of shape (# of bins)
+        the list of distances
+    partial_gr : array-like of shape (len(r), # of atom pairs)
+        pair distribution functions
+    """
+
+    numbers = atoms.ni
+    vectors = atoms.volume.vectors
+    partial_gr = np.zeros_like(histogram, dtype=float)
+    nr, npar = histogram.shape  
+    _volume = volume(vectors)
+    ntypes = len(numbers)
+    nxn = np.zeros(npar)
+    r = np.zeros(nr)
+    
+    ic = 0
+    for itype in range(ntypes):
+        for jtype in range(itype, ntypes):
+            nxn[ic] = numbers[itype]*numbers[jtype]
+            #ic = int(itype*(2*ntypes-itype-1)/2+jtype)
+            if(itype != jtype):
+                nxn[ic] = nxn[ic]*2
+            ic += 1
+    
+    for ir in range(1, nr):
+        r[ir] = ir*dr
+        # gnorm = (3.0*ir*ir+0.25)*dr*dr*dr*2.0*np.pi/(3.0*_volume)
+        gnorm = r[ir]*r[ir]*dr*2.0*np.pi/(_volume)
+        for ic in range(npar):
+            partial_gr[ir,ic] = histogram[ir][ic]/(gnorm*nxn[ic])
+    
+    return r, partial_gr
+
+# def SQ(atoms,gr,qmin,qmax,dr,dq):
+def partial_structure_factor(atoms, partial_gr, qmin, qmax, dr, dq):
+    """
+    Partial structure factors
+
+    Parameters
+    ----------
+    atoms : Atoms object
+        structural data including atomic symbol, position, lattice info,...
+    partial_gr : array-like of shape (len(r), # of atom pairs)
+        pair distribution functions
+    qmin : float
+        minimum value of q (distance in reciprocal space)
+    qmax : float
+        maximum value of q (distance in reciprocal space)
+    dr : float
+        real distance interval
+    qr : float
+        reciprocal distance interval (bin width) in the histogram
+
+    Returns
+    -------
+    q : array-like of shape (# of bins)
+        the list of reciprocal distances
+    partial_sq : array-like of shape (len(q), # of atom pairs)
+        pair structure factors
+    """
+
+    n = atoms.number
+    _volume = volume(atoms.volume.vectors)
+    nq = int(math.ceil((qmax-qmin)/dq))+1
+    q =np.array([(qmin+float(i)*dq) for i in range(nq)])
+    nr, npar = partial_gr.shape
+    sqr = np.zeros((nr, nq+1), dtype=float)
+    partial_sq = np.zeros((nq, npar), dtype=float)
+    
+    for iq in range(nq):
+        s = np.zeros(npar)
+        for ir in range(1, nr):
+            r = float(ir)*dr
+            sqr = 4.0*np.pi*float(n)/_volume*r*np.sin(r*q[iq])/q[iq]*dr
+            for ic in range(npar):
+                s[ic] += (partial_gr[ir][ic]-1.0)*sqr
+        
+        partial_sq[iq] = s
+
+    partial_sq = partial_sq+1.0
+    
+    return q, partial_sq
+
+# def total_gr(gr,coeff):
+def atomc_pair_dist_func_neutron(partial_gr, coeff_neutron):
+    """
+    Atomic pair distribution function 
+    computed by neutron scattaring length 
+
+    Parameters
+    ----------
+    partial_gr : array-like of shape (len(r), # of atom pairs)
+        pair distribution functions
+    coeff_neutron: array-like of shape (# of atom pairs)
+        coefficients regarding neutron scattering
+
+    Returns
+    -------
+    total_gr : array-like of shape (len(r))
+        atomic pair distribution function by neutron diffraction
+    """
+
+    nr, npar = partial_gr.shape
+    total_gr = np.zeros(nr)
+    for ir in range(nr):
+        for ic in range(npar):
+            total_gr[ir] += coeff_neutron[ic]*(partial_gr[ir][ic]-1.0)
+    return total_gr + 1.0
+
+# def total_SQ(sq, coeff):
+def structure_factor_neutron(partial_sq, coeff_neutron):
+    """
+    Structure factor by neutron beam diffraction 
+
+    Parameters
+    ----------
+    partial_sq : array-like of shape (len(q), # of atom pairs)
+        pair structure factors
+    coeff_neutron: array-like of shape (# of atom pairs)
+        coefficients regarding neutron scattering
+
+    Returns
+    -------
+    sq_neutron : array-like of shape (len(q))
+        structure factor by neutron beam diffraction 
+    """
+
+    nq, npar = partial_sq.shape
+    sq_neutron = np.zeros(nq)
+    for iq in range(nq):
+        for ic in range(npar):
+            sq_neutron[iq] += coeff_neutron[ic]*partial_sq[iq,ic]
+            
+    return sq_neutron
+
+# def total_FQ(sq, coeff):
+def structure_factor_xray(partial_sq, coeff_xray):
+    """
+    Structure factor by X-ray beam diffraction 
+
+    Parameters
+    ----------
+    partial_sq : array-like of shape (len(q), # of atom pairs)
+        pair structure factors
+    coeff_xray: array-like of shape (# of atom pairs, len(q))
+        coefficients regarding X-ray scattering
+
+    Returns
+    -------
+    sq_xray : array-like of shape (len(q))
+        structure factor by X-ray beam diffraction 
+    """
+
+    nq, npar = partial_sq.shape
+    sq_xray = np.zeros(nq)
+    for i in range(nq):
+        for j in range(npar):
+            sq_xray[i] += (partial_sq[i][j]*coeff_xray[i][j])
+    return sq_xray
+
+# def Gr(r, total_gr, rho):
+def reduced_pair_dist_func(r, total_gr, rho):
+    """
+    Reduced atomic pair distribution function 
+    
+    Parameters
+    ----------
+    r : array-like of shape (# of bins)
+        the list of real space distances
+    total_gr : array-like of shape (len(r))
+        atomic pair distribution function by neutron diffraction
+    rho : float
+        atomic number density in Angstrom^{-3}
+
+    Returns
+    -------
+    total_gr : array-like of shape (len(r))
+        atomic pair distribution function by neutron diffraction
+    """
+
+    Gr = 4.*np.pi*r*rho*(total_gr-1)
+    return Gr
+  
+# def Tr(r, total_gr, rho):
+def total_corr_fun(r, total_gr, rho):  
+    """
+    Total correlation function 
+    
+    Parameters
+    ----------
+    r : array-like of shape (# of bins)
+        the list of real space distances
+    total_gr : array-like of shape (len(r))
+        atomic pair distribution function by neutron diffraction
+    rho : float
+        atomic number density in Angstrom^{-3}
+
+    Returns
+    -------
+    Tr : array-like of shape (len(r))
+        total correlation function
+    """
+
+    Tr = 4.*np.pi*r*rho*total_gr
+    return Tr
+
+# def Nr(r, Tr):
+def radial_dist_fun(r, total_gr, rho):
+    """
+    Radial distribution function
+    
+    Parameters
+    ----------
+    r : array-like of shape (# of bins)
+        the list of real space distances
+    total_gr : array-like of shape (len(r))
+        atomic pair distribution function by neutron diffraction
+    rho : float
+        atomic number density in Angstrom^{-3}
+
+    Returns
+    -------
+    Nr : array-like of shape (len(r))
+        radial distribution function
+    """
+
+    Tr = total_corr_fun(r, total_gr, rho)
+    Nr = r*Tr
+    return Nr
+
 def ncoeff(symbols, frac, norm=True):
+    """
+    Coefficients regarding Neutron diffraction
+
+    Parameters
+    ----------
+    symbols : list of shape (# of symbols)
+        atomic symbols
+    frac : 
+        fraction of elements
+    norm : Bool, optional 
+        normalize?
+
+    Returns
+    -------
+    coeff : array-like of shape (# of atom pairs)
+        coefficients regarding Neutron diffraction
+    """
     
     FOUR_PI = 12.5663706143592  # 4*PI
 
@@ -236,23 +441,38 @@ def ncoeff(symbols, frac, norm=True):
 
 def xcoeff(symbols, frac, q, option=3):
     """
-    Options for ceofficients are: 
+    Coefficients regarding X-ray diffraction
+
+    Parameters
+    ----------
+    symbols : list of shape (# of symbols)
+        atomic symbols
+    frac : 
+        fraction of elements
+    q : array-like of shape (# of bins)
+        the list of reciprocal distances
+    option : int (1 or 2 or 3) 
         1 - Use as calculated
         2 - Divide by <f**2)
         3 - Divide by <f>**2
+
+    Returns
+    -------
+    coeff_xray: array-like of shape (# of atom pairs, len(q))
+        coefficients regarding X-ray diffraction
     """
     
     nq = len(q)
     ntypes = len(symbols)
     npar = int(ntypes*(ntypes+1)/2)
     ff = [0.0]*npar
-    xcoeff = [0.0]*nq
+    coeff_xray = [0.0]*nq
     
     for iq in range(nq):    
         q2 = q[iq]*q[iq]/(16.0*np.pi*np.pi)
         fsq = 0.0
         f = 0.0
-        local_xcoeff = [0.0]*npar
+        local_coeff_xray = [0.0]*npar
         
         for itype in range(ntypes):
             e = symbols[itype]
@@ -273,17 +493,17 @@ def xcoeff(symbols, frac, q, option=3):
             for jtype in range(itype, ntypes):
                 ic = int(itype*(2*ntypes-itype-1)/2) + jtype
 
-                local_xcoeff[ic] = frac[itype]*frac[jtype]*ff[itype]*ff[jtype]
+                local_coeff_xray[ic] = frac[itype]*frac[jtype]*ff[itype]*ff[jtype]
                 if (itype != jtype):
-                    local_xcoeff[ic] = local_xcoeff[ic]*2.0
+                    local_coeff_xray[ic] = local_coeff_xray[ic]*2.0
                 if (option == 2):
-                    local_xcoeff[ic] = local_xcoeff[ic]/fsq
+                    local_coeff_xray[ic] = local_coeff_xray[ic]/fsq
                 if (option == 3):
-                    local_xcoeff[ic] = local_xcoeff[ic]/(f*f)
+                    local_coeff_xray[ic] = local_coeff_xray[ic]/(f*f)
                   
-        xcoeff[iq] = local_xcoeff 
+        coeff_xray[iq] = local_coeff_xray 
         
-    return xcoeff
+    return coeff_xray
 
 def neighbor(atoms,center,bond_lengths):
     """
