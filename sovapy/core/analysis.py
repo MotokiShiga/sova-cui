@@ -148,9 +148,9 @@ class PDFAnalysis(Analysis):
         ax = fig.add_subplot(2, 4, 1)
         for i in range(3):    
             ax.plot(self.r, self.partial_gr.T[i], label=self.atoms.pairs[i])
-            ax.set_xlabel('r (Angstrom)')
-            ax.set_ylabel('Partial g(r)')
-            ax.legend()
+        ax.set_xlabel('r (Angstrom)')
+        ax.set_ylabel('Partial PDF g(r)')
+        ax.legend()
 
         ax = fig.add_subplot(2, 4, 2)
         ax.set_xlabel('r (Angstrom)')
@@ -160,9 +160,9 @@ class PDFAnalysis(Analysis):
         ax = fig.add_subplot(2, 4, 3)
         for i in range(3):    
             ax.plot(self.q, self.partial_sq.T[i], label=self.atoms.pairs[i])
-            ax.set_xlabel('Q (Angstrom^(-1))')
-            ax.set_ylabel('Partial structure factor S(Q)')
-            ax.legend()
+        ax.set_xlabel('Q (Angstrom^(-1))')
+        ax.set_ylabel('Partial structure factor S(Q)')
+        ax.legend()
 
         ax = fig.add_subplot(2, 4, 4)
         ax.set_xlabel('Q (Angstrom^(-1))')
