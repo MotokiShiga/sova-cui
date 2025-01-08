@@ -103,7 +103,7 @@ ax.legend()
 ax = fig.add_subplot(2, 4, 4)
 ax.set_xlabel('Q (Angstrom^(-1))')
 ax.set_ylabel('Structure factor by Neutron SN(Q)')
-ax.plot(q, sq_xray)
+ax.plot(q, sq_neutron)
 
 ax = fig.add_subplot(2, 4, 5)
 ax.set_xlabel('Q (Angstrom^(-1))')
