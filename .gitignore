@@ -1,14 +1,17 @@
-# Byte-compiled / optimized / DLL files
+# Python-generated files
 __pycache__/
 *.py[cod]
-*.pyd
 *$py.class
 build/
-
-# C extensions
-#*.so
-vcruntime140.dll
-
+dist/
+wheels/
+*.egg-info
 .ipynb_checkpoints
+
+# C generated files
+*.so
+*.dll
+
+# other files
 .DS_Store
 .vscode
