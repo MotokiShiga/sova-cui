@@ -538,10 +538,15 @@ class Volume(object):
     def fromstring(cls, s):
         try:
             s = s.split()
-            t = s[0].upper()        # volume type
-            if not t in VOLUME_TYPES:
-                s = []
+            if len(s)>0:
+                t = s[0].upper()        # volume type
+                if not t in VOLUME_TYPES:
+                    s = []
+                    t = 'NON'
+                    print('Warning: NON was set as volume type beaccuse of the wrong description in the 2nd line of xyz file.')
+            else:
                 t = 'NON'
+                print('Warning: NON was set as volume type beaccuse cell info was not found in the 2nd line of xyz file.')
             cl = cls.volumes[t][0]  # volume class
             if len(s) == 10:        # cell vectors given
                 param = [float(f) for f in s[1:]]

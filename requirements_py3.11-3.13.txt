@@ -1,7 +1,7 @@
 ase==3.22.1
 asttokens==2.4.1
 astunparse==1.6.3
-h5py==3.7.0
+h5py==3.13.0
 igraph==0.11.3
 ipykernel==6.29.4
 ipython==8.25.0
@@ -16,10 +16,10 @@ jupyterlab==4.2.1
 jupyterlab_pygments==0.3.0
 jupyterlab_server==2.27.2
 jupyterlab_widgets==3.0.11
-llvmlite==0.43.0
-matplotlib==3.6.3
+llvmlite==0.44.0
+matplotlib==3.10.0
 matplotlib-inline==0.1.7
-numpy==1.23.5
+numpy==2.1.0
 networkx==3.1
 PyCifRW==5.0.0
 pycparser==2.21
@@ -27,7 +27,8 @@ pyparsing==3.0.9
 python-dateutil==2.8.2
 python-json-logger==2.0.7
 python-utils==3.5.2
-scipy==1.8.1
+scipy==1.15.2
+setuptools==77.0.1
 spglib==2.0.2
 tqdm==4.66.4
 widgetsnbextension==4.0.11

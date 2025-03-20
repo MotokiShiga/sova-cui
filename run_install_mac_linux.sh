@@ -24,11 +24,3 @@ rm -rf  build
 cd ../../../sovapy/computation/cavity_calculation/extension/
 make
 cd ../../../../
-
-#Build libalgorithm.so using built files (macOS)
-# cd ./sovapy/computation/cavity_calculation/extension/
-# xattr -rc gr_mac/lib/*
-# cp gr_mac/lib/*dylib ./
-# python setup_mac.py build_ext -i
-# rm -rf  build
-# cd ../../../../

@@ -1,4 +1,4 @@
-import os, h5py, re
+import os, sys, h5py, re
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -85,6 +85,10 @@ class PDFAnalysis(Analysis):
         #Atoms object
         self.atoms = atoms
 
+        if not self.atoms.volume.periodic:
+            print('Error: Periodicity is required for PDF analysis!')
+            return 
+
         # Computation settings
         self.dr = dr                       
         self.dq = dq
@@ -105,6 +109,10 @@ class PDFAnalysis(Analysis):
 
     # Input settings and run all computations for analysis
     def run(self):
+        if not self.atoms.volume.periodic:
+            print('Error: Cannot run PDF analysis because of no periodicity!')
+            return 
+
         #Histogram of atom-pair distances
         # (The number of atoms at a distance between r and r+dr from a given atom.)
         self.r, hist = atom_pair_hist(self.atoms, self.dr)
@@ -144,6 +152,10 @@ class PDFAnalysis(Analysis):
 
     # Plot all analysis results
     def plot(self, figsize=(18, 8)):
+        if not self.atoms.volume.periodic:
+            print('Error: Cannot plot because any computed results were NOT found!')
+            return 
+
         fig = plt.figure(figsize=figsize) 
         ax = fig.add_subplot(2, 4, 1)
         for i in range(3):    
@@ -195,6 +207,9 @@ class PDFAnalysis(Analysis):
 
     # Save analysis results to hdf5
     def save_to_hdf5(self):
+        if not self.atoms.volume.periodic:
+            print('Error: Cannot save to hdf file because any computed results were NOT found!')
+            return 
 
         ori_fname = self.atoms.original_file_data.file_name
         hdf5_path = os.path.splitext(ori_fname)[0] + '.hdf5'
@@ -245,8 +260,7 @@ class CoordinationNumberAnalysis(Analysis):
         #Atoms object
         self.atoms = atoms
 
-        # Variables to save results
-        
+        # Variables to save results 
         self.elems        = None  # List of elements (atoms)
         self.coord_num    = None  # List of coordination numbers
         self.list_counts  = None  # Counts (elems, coord_num)
@@ -437,6 +451,10 @@ class TetrahedralOrderAnalysis(Analysis):
         #Atoms object
         self.atoms = atoms
 
+        if not self.atoms.volume.periodic:
+            print('Error: Periodicity is required for tetrahedral order analysis!')
+            return 
+
         # Computation settings
         self.bins = bins
         if list_cc_dist is not None:
@@ -450,6 +468,9 @@ class TetrahedralOrderAnalysis(Analysis):
 
     # Input settings and run all computations for analysis
     def run(self):
+        if not self.atoms.volume.periodic:
+            print('Error: Cannot run tetrahedral order analysis because of no periodicity!')
+            return
         self.list_q = list()
         self.list_idx_center = list()
         if self.list_cc_dist is None:
@@ -469,6 +490,9 @@ class TetrahedralOrderAnalysis(Analysis):
 
     # Plot all analysis results
     def plot(self, figsize=None):
+        if not self.atoms.volume.periodic:
+            print('Error: Cannot plot because any computed results were NOT found!')
+            return 
 
         num_tet = len(self.list_cc_dist)
         row_num = (num_tet//3)+1
@@ -490,6 +514,9 @@ class TetrahedralOrderAnalysis(Analysis):
 
     # Save analysis results to hdf5
     def save_to_hdf5(self):
+        if not self.atoms.volume.periodic:
+            print('Error: Cannot save to hdf file because any computed results were NOT found!')
+            return 
 
         ori_fname = self.atoms.original_file_data.file_name
         hdf5_path = os.path.splitext(ori_fname)[0] + '.hdf5'
@@ -555,6 +582,10 @@ class RingAnalysis(Analysis):
     def __init__(self, atoms, guttman=True, king=False, primitive=False, cutoff_primitive=24, num_parallel=-1, close=True):
         #Atoms object
         self.atoms = atoms
+
+        if not self.atoms.volume.periodic:
+            print('Error: Periodicity is required for Ring analysis!')
+            return 
         
         # Computation settings
         self.flag_guttman = guttman
@@ -572,6 +603,10 @@ class RingAnalysis(Analysis):
 
     # Input settings and run all computations for analysis
     def run(self):
+        if not self.atoms.volume.periodic:
+            print('Error: Cannot run Ring analysis because of no periodicity!')
+            return 
+
         if self.flag_guttman:
             self.guttman_ring = RINGs(self.atoms)
             print('Calculating Guttman rings....')
@@ -610,6 +645,9 @@ class RingAnalysis(Analysis):
 
     # Plot all analysis results
     def plot(self, figsize=None):
+        if not self.atoms.volume.periodic:
+            print('Error: Cannot plot because any computed results were NOT found!')
+            return 
         row_num =  int(self.guttman_ring is not None)
         row_num += int(self.king_ring is not None)
         row_num += int(self.primitive_ring is not None)
@@ -713,6 +751,9 @@ class RingAnalysis(Analysis):
 
     # Save analysis results to hdf5
     def save_to_hdf5(self):
+        if not self.atoms.volume.periodic:
+            print('Error: Cannot save to hdf file because any computed results were NOT found!')
+            return 
 
         ori_fname = self.atoms.original_file_data.file_name
         hdf5_path = os.path.splitext(ori_fname)[0] + '.hdf5'
@@ -808,6 +849,10 @@ class CavityAnalysis(Analysis):
     def __init__(self, atoms, resolution=128, cutoff_radii=2.8 ):
         #Atoms object
         self.atoms = atoms
+
+        if not self.atoms.volume.periodic:
+            print('Error: Periodicity is required for Cavity analysis!')
+            return 
         
         # Computation settings
         self.resolution       = resolution
@@ -826,12 +871,18 @@ class CavityAnalysis(Analysis):
 
     # Input settings and run all computations for analysis
     def run(self):
+        if not self.atoms.volume.periodic:
+            print('Error: Cannot run Cavity analysis because of no periodicity!')
+            return 
         self.cavity = Cavity(self.atoms)
         self.cavity.calculate(resolution=self.resolution, cutoff_radii=self.cutoff_radii, 
                               gyration_tensor_parameters=True)
 
     # Plot all analysis results
     def plot(self, figsize=(20,12)):
+        if not self.atoms.volume.periodic:
+            print('Error: Cannot plot because any computed results were NOT found!')
+            return 
         cavities = [self.cavity.domains, self.cavity.center_cavities, self.cavity.surface_cavities]
         names = ["Cavity domain", "Center cavity", "Surface cavity"]
         attrs = ['volumes', 'surface_areas', 'squared_gyration_radii', 
@@ -854,6 +905,9 @@ class CavityAnalysis(Analysis):
 
     # Save analysis results to hdf5
     def save_to_hdf5(self):
+        if not self.atoms.volume.periodic:
+            print('Error: Cannot save to hdf file because any computed results were NOT found!')
+            return 
 
         ori_fname = self.atoms.original_file_data.file_name
         hdf5_path = os.path.splitext(ori_fname)[0] + '.hdf5'
