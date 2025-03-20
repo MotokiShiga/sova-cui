@@ -44,15 +44,15 @@ Major packages used for our development
 <!-- framework & version -->
 | Package  | Version |
 | --------------------- | ---------- |
-| Python                | 3.10.0     |
+| Python                | 3.11 - 3.13    |
 | ase                 | 3.22.1     |
-| h5py              | 3.7.0    |
+| h5py              | 3.13.0    |
 | igraph                 | 0.11.3     |
-| matplotlib   | 3.6.3  |
+| matplotlib   | 3.10.0  |
 | networkx                 | 3.1     |
-| numpy                | 1.23.5      |
-| PyCifRW             | 4.4.5      |
-| scipy | 1.8.1    |
+| numpy                | 2.1.0      |
+| PyCifRW             | 5.0.0      |
+| scipy | 1.15.2    |
 | spglib               | 2.0.2     |
 
   
