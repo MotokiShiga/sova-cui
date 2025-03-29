@@ -4,7 +4,7 @@ import os
 import os.path
 import inspect
 
-CONFIG_DIRECTORY = '~/.pymodel/'   # MUST be written with ~ to save a path in the config file that is relative to the user's home directory
+CONFIG_DIRECTORY = '~/.sova/'   # MUST be written with ~ to save a path in the config file that is relative to the user's home directory
 CONFIG_FILE = os.path.expanduser('%s/config.cfg' % CONFIG_DIRECTORY)
 CONFIG_SPEC_FILE = os.path.expanduser('%s/config.spec' % CONFIG_DIRECTORY)
 

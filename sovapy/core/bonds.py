@@ -112,10 +112,19 @@ def get_bonds_with_element_pair(atoms, min_dist, max_dist, radii_sum_factor):
     for index, position in enumerate(atoms.positions):
         distance_vector_array = atoms.positions[index+1:] - position
         distance_squared_array = np.sum(np.square(distance_vector_array), axis=1)
-        ntypes = len(atoms.symbol_set)
-        #ic = int(i*(2*ntypes-(i+1))/2+j)
-        ics = atoms.indices[index+1:]*(2*ntypes-(atoms.indices[index+1:]+1))/2+atoms.indices[index]
-        ics.astype(int)
+        # ntypes = len(atoms.symbol_set)
+        # #ic = int(i*(2*ntypes-(i+1))/2+j)
+        # ics = atoms.indices[index+1:]*(2*ntypes-(atoms.indices[index+1:]+1))/2+atoms.indices[index]
+        # ics.astype(int)
+        type1 = atoms.indices[index]
+        ics = []
+        for type2 in atoms.indices[index+1:]:
+            if type1 <= type2:
+                ic = int(type1+type2*(1+type2)/2)
+            else:
+                ic = int(type2+type1*(1+type1)/2)
+            ics.append(ic)
+        ics = np.array(ics)
         bonds = np.zeros_like(ics,dtype=float)
         for ic, dist in max_dist.items():
             bonds[ics == ic] = dist

@@ -715,8 +715,9 @@ class Atoms(object):
     
     def bonds_by_dist(self,min_dist, max_dist):
         self.indices = np.zeros(self.num_total)
+        symbols = np.array(self.symbols)
         for i, elem in enumerate(self.symbol_set):
-            self.indices[self.symbols == elem] = i
+            self.indices[symbols == elem] = i
         self._bonds = bonds.get_bonds_with_element_pair(self, min_dist, max_dist, 1.0)
         return self._bonds
 
@@ -1510,7 +1511,10 @@ class ResultsFile(Results):
                 radii = np.array(group['radii'])
                 symbols = [s.decode() for s in group['symbols'][:]]
                 volume = group['volume'][0].decode()
-                origin = np.array(group['volume_origin'])                                
+                origin = np.array(group['volume_origin'])
+                pb = np.array(group['volume_periodic_boundary'])
+                periodic_boundary = [float(pb[0]), float(pb[1])]
+                # periodic_boundary = [-0.5, 0.5]
                 if "bond_lengths" in group.keys():
                     bls = group["bond_lengths"]
                     bond_lengths = dict()
@@ -1521,6 +1525,7 @@ class ResultsFile(Results):
                     
                 self.atoms = Atoms(positions, radii, symbols, volume)
                 self.atoms.volume.origin = origin
+                self.atoms.volume.periodic_boundary = periodic_boundary
                 self.atoms.set_bond_lengths(bond_lengths)
 
                 # Load original text data
@@ -1614,6 +1619,7 @@ class ResultsFile(Results):
             group['symbols'] = self.atoms.symbols # group['elements'] = self.atoms.elements.tolist()
             group['volume'] = [str(self.atoms.volume)]
             group['volume_origin'] = self.atoms.volume.origin.tolist()
+            group['volume_periodic_boundary'] = np.array(self.atoms.volume.periodic_boundary).tolist()
 
             #Original text data
             if (self.atoms.original_file_data is not None):
@@ -1624,8 +1630,6 @@ class ResultsFile(Results):
                 ds_txt = group.create_dataset('structure_text', (1, ), dtype=dt, compression="gzip")
                 ds_txt[0] = self.atoms.original_file_data.structure_text
                 
-            # print('-----bond_lengths in Atoms')
-            # print(self.atoms.bond_lengths)
             if self.atoms.bond_lengths is not None:
                 list_bond_lengths = list()
                 for a in self.atoms.bond_lengths.items():
