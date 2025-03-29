@@ -880,8 +880,8 @@ class RINGs:
         super().__init__()
         
         self.atoms = atoms
-        self.num_atoms = self.atoms.number
-        self.atom_symbols = np.array(self.atoms.elements)
+        self.num_atoms = self.atoms.num_total #self.atoms.number
+        self.atom_symbols = np.array(self.atoms.symbols) #np.array(self.atoms.elements)
         self.rings = []
             
     def calculate(self, ring_type, pair_atom_symbols=None, p_pair=0.3,

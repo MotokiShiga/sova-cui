@@ -11,10 +11,9 @@ structure_file = "../data/amorphous_md/a_SiO2_speed1e11K.xyz"
 f = File.open(structure_file)
 
 ### Get atomic and cell (simulation box) data
-atoms = f.getatoms()
+atoms = f.get_atoms()
 
-num_atoms = len(atoms.elements)
-print("The number of atoms:", num_atoms)
+print("The number of atoms:", atoms.num_total)
 
 ### Build chemical bonds
 bond_lengths = {('Si', 'O') : 2.0, ('Si', 'Si') : -1, ('O', 'O') : -1}
@@ -71,11 +70,10 @@ print('Data information:')
 print('Package: ', name)
 print('Version: ', version)
 
-num_atoms = len(result_atoms.elements)
 print("")
 print(type(result_atoms))
-print("The number of atoms:", num_atoms)
-print("Atom symbols:", result_atoms.symbols)
+print("The number of atoms:", result_atoms.num_total)
+print("Atom symbols:", result_atoms.symbol_set)
 print("")
 result_atoms.bond_summary()
 

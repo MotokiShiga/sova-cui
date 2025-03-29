@@ -13,8 +13,8 @@ structure_file = "../data/amorphous_md/a_SiO2_speed1e11K.xyz"
 f = File.open(structure_file)
 
 # Get atomic and cell (simulation box) data
-atoms = f.getatoms()
-print("Atom symbols:", atoms.symbols)
+atoms = f.get_atoms()
+print("Atom symbols:", atoms.symbol_set)
 
 # Setting of maximum bond lengths for atomic element pairs
 # Set -1 to pairs for which you don't want to build bonds.
@@ -51,7 +51,7 @@ print('\n\n')
 # Tetrahedral order analysis
 print('Tetrahedral order analysis:')
 list_cc_dist = [['Si','O',2.0],['Si','Si',3.5]]
-tetra = TetrahedralOrderAnalysis(atoms, bins=100, list_cc_dist=list_cc_dist)
+tetra = TetrahedralOrderAnalysis(atoms, num_bins=100, list_cc_dist=list_cc_dist)
 tetra.run()
 tetra.plot()
 tetra.save_to_hdf5()

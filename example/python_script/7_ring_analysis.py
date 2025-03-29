@@ -11,7 +11,7 @@ structure_file = "../data/crystal/sio2_beta_cristobalite333.cif"
 f = File.open(structure_file)
 
 # Get atomic and cell (simulation box) data
-atoms = f.getatoms()
+atoms = f.get_atoms()
 
 # Initialize the class RINGs with structure information
 ring = RINGs(atoms)

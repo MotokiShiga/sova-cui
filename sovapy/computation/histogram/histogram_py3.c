@@ -100,7 +100,13 @@ static PyObject *calc_histogram(PyObject *self, PyObject *args)
       {
 	type1++;
       }
-      ic = (int)(type1*(2 * ntypes - type1 - 1) / 2 + type2);
+
+      // Indexing atom pair
+      if (type1 <= type2){
+        ic = (int)(type1+type2*(1+type2)/2);
+      }else{
+        ic = (int)(type2+type1*(1+type1)/2);
+      }
 
       x = atom_pos[i].x - atom_pos[j].x + 3.0;
       y = atom_pos[i].y - atom_pos[j].y + 3.0;

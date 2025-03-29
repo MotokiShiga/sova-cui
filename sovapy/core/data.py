@@ -1,15 +1,10 @@
-import os, sys, re
-import collections
+import os, sys, re, collections, h5py
 import numpy as np
-import h5py
 import dateutil.parser
 from datetime import datetime
-from . import volumes
-from . import elements
-from . import bonds
+from . import volumes, elements, bonds, gridding
 from .volumes import HexagonalVolume, NonVolume
 from ..config.configuration import config
-from . import gridding
 from ..computation.rings import Ring
 from ..computation.cavity import Cavity
 
@@ -31,7 +26,7 @@ __all__ = ["Atoms",
            "CalculatedFrames",
            "Results"]
 
-# Get the current version number:
+# Get the current version number of sovapy:
 cur_dirname =  os.path.dirname(__file__)
 file_version = os.path.join(cur_dirname, '..', '__init__.py')
 with open(file_version) as fv:
@@ -381,8 +376,28 @@ class ResultInfo(FileInfo):
                 subgroup = h5group.require_group("resolution{}".format(resolution))
                 info.tohdf(subgroup, overwrite)
 
-# This class preserves text data of structurral information loaded to Atoms objects
 class OriginalStructureData(object):
+    """ 
+    Original strucure text data
+
+    Used to preserve the original text of structural data loaded to Atoms object.
+
+    Parameters
+    ----------
+
+    filepath : str
+        The full path of structure data name
+    text_data : str, optional
+        Text of structure data
+    
+    Attributes
+    ----------
+
+    file_name : str
+        The file name of original data, not full path
+    structure_text : str
+        Text of original structure data
+    """
 
     def __init__(self, filepath, text_data=None):
         self.file_name = None       # Name of original data
@@ -402,9 +417,16 @@ class OriginalStructureData(object):
         else:
             self.structure_text = text_data
 
-    # Export original text data to a text file.
     def export_txt(self, output_path=None):
+        """Export the original text of structure data
+
+        Parameters
+        ----------
+        output_path : str, optional
+            Output file name, by default None (to use original name.)
+        """
         
+        # Use the original file name as the output name
         if output_path is None:
             output_path = self.file_name
 
@@ -423,7 +445,6 @@ class OriginalStructureData(object):
         else:
             print('{:} already exists! Choose another file name.'.format(output_path))
         
-
 class Atoms(object):
     """
     This class represents a list of atoms and their properties.
@@ -455,7 +476,7 @@ class Atoms(object):
         *args : list
             various list patterns.
 
-        - ``Atoms(positions, radii, elements, volume)`` :
+        - ``Atoms(positions, radii, symbols, volume)`` :
             create the object using the given data
 
         - ``Atoms(molecule, volume)`` :
@@ -471,20 +492,20 @@ class Atoms(object):
         """
         
         # OriginalStructureData object 
-        # to preserve text data of structurral information
+        # to save the text data of structural data
         self.original_file_data = None
 
         if isinstance(args[0], h5py.Group):
             h5group = args[0]
             positions = h5group["positions"]
             radii = h5group["radii"]
-            if "elements" in h5group:
-                elements = h5group["elements"]
+            if "symbols" in h5group:
+                atom_symbols = h5group["symbols"]
             else:
                 if USE_LOGGER: 
-                    logger.warn("Dataset 'elements' not found. Using 'atom' as default value")
-                elements = np.empty(len(radii), dtype="|U4")
-                elements[:] = "atom"
+                    logger.warn("Dataset 'symbols' not found. Using 'atom' as default value")
+                atom_symbols = np.empty(len(radii), dtype="|U4")
+                atom_symbols[:] = "atom"
             if "volume" in h5group.attrs:
                 volume = h5group.attrs["volume"]
             else:
@@ -498,45 +519,62 @@ class Atoms(object):
                     bond_lengths[(s[0].decode(),s[1].decode())] = float(s[2])
             else:
                 bond_lengths = None
-
         elif isinstance(args[0], Atoms):
             atoms = args[0]
             volume = atoms.volume
                         
             positions = atoms.positions
-            elements = atoms.elements   
+            atom_symbols = atoms.symbols   
             bond_lengths = atoms.bond_lengths
             if bond_lengths is not None:
                 self.set_bond_lengths(bond_lengths)
             else:
                 bond_lengths = None
         else:
-            # In this case, atom positions may be outside of the volume
-                        
-            positions = args[0]
-            radii = args[1]
-            elements = args[2]
-            volume = args[3]
+            # This case is used when a structure text file is opened.
+            positions = args[0] # Atomic positions
+            radii = args[1]     # Atomic radii
+            atom_symbols = args[2]  # Atomic symbols
+            volume = args[3]    # Cell info
             
+            # if positions are normalized
             is_norm = False
             if len(args) > 4:
                 is_norm = args[4]
-                                
+
+            # Generate 'volume' class instance from a string                
             if isinstance(volume, str):
                 volume = volumes.Volume.fromstring(volume)                
 
+            # Shift atomic positions according to the boundary
+            # The default boundary is [-0.5, +0.5]*(lattice vector)
             if volume is not None and volume.periodic == True:
                 boundary_range = volume.periodic_boundary # boundary[min,max]
                 positions = list(map(lambda pos: volume.get_equivalent_point(pos,boundary_range[1]),
                                 positions))
+            # The default setting of bond lengths
             bond_lengths = None
+
+        # Cell information
         self.volume = volume
+
+        # Atomic positions
         self.positions = np.array(positions, dtype=np.float64)
-        self.number = self.positions.shape[0]
-        self.elements = np.array(elements, dtype="|U4")
-        self.numbers = dict(collections.Counter(self.elements))
-        self.elements_kind = sorted([k for k, v in self.numbers.items() if v > 0])
-        self.elements_count = [self.numbers[e] for e in self.elements_kind]        
+        
+        # Total number of atoms
+        self.num_total = self.positions.shape[0] # Old name: self.number
+        
+        # Atomic symbols
+        self.symbols = list(atom_symbols) # Old name: self.elements
+        # self.elements = np.array(elements, dtype="|U4")
+
+        # Dictionary {atom_symbol: The number of atoms}
+        self.num_atoms_dict = dict(collections.Counter(self.symbols))
+        # self.numbers = dict(collections.Counter(self.elements))
+        
+        # self.elements_kind = sorted([k for k, v in self.numbers.items() if v > 0])
+        # self.elements_count = [self.numbers[e] for e in self.elements_kind]        
+
         self.indices = None
         self.radii = radii
         self._covalence_radii = None
@@ -551,42 +589,71 @@ class Atoms(object):
         self.sorted_indexes = None
         self._elementsorted_positions = None
         self._grid = None
-        self.symbols = None # equal self.elements_kind
-        self.ni = None
-        self.frac = None
+
+        # self.symbols = None # equal self.elements_kind
+        # self.ni = None
+        # self.frac = None
         self.pairs = None
         self.trios = None
-        # initialize
-        self.symbol_order()
+        
+        # Generate symbol data
+        self.generate_symbol_data()
+        # self.symbol_order()
+
+
         # self.set_bond_lengths()
         self.bond_lengths = bond_lengths
         self.set_bond_lengths(bond_lengths) 
     
-    def symbol_order(self,symbols=None):
-        if symbols is None:
-            atomic_numbers = elements.numbers
-        else:
-            atomic_numbers = {str.upper(symbols[i]):(i+1) for i in range(len(symbols))}
-        self.symbols, self.ni = zip(*sorted(self.numbers.items(), key=lambda x: atomic_numbers.get(str.upper(x[0]))))
-        self.symbols = list(self.symbols)
-        self.ni = list(self.ni)
-        self.frac = self.ni/np.sum(self.ni)
+    def generate_symbol_data(self): # Old name: symbol_order
+
+        # Dictionary {(Atomic symbol): atomic number}
+        atomic_numbers = elements.numbers
+        
+        # Set of atomic symbols (sorted by atomic number), and the number of each atom
+        self.symbol_set, self.num_atoms = \
+            zip(*sorted(self.num_atoms_dict.items(), key=lambda x: atomic_numbers.get(str.upper(x[0]))))
+        self.symbol_set = list(self.symbol_set)
+        self.num_atoms = list(self.num_atoms)
+
+        # The fraction of each atom
+        self.frac_atoms = self.num_atoms/np.sum(self.num_atoms)
+
+        # self.symbols, self.ni = zip(*sorted(self.numbers.items(), key=lambda x: atomic_numbers.get(str.upper(x[0]))))
+        # self.symbols = list(self.symbols)
+        # self.ni = list(self.ni)
+        # self.frac = self.ni/np.sum(self.ni)
+
+        # The set of atom pairs
         self.pairs = []
-        for i in range(len(self.symbols)):
-            for j in range(i,len(self.symbols)):
-                self.pairs.append(self.symbols[i] + '-' + self.symbols[j])
+        for i in range(len(self.symbol_set)):
+            for j in range(i,len(self.symbol_set)):
+                self.pairs.append([self.symbol_set[i], self.symbol_set[j]])
+        # self.pairs = []
+        # for i in range(len(self.symbols)):
+        #     for j in range(i,len(self.symbols)):
+        #         self.pairs.append(self.symbols[i] + '-' + self.symbols[j])
+
+        # The set of atom triplets
+        # which is used to compute TRIPLETS - bond angle correlations
         self.trios = []
-        for i1, symbol1 in enumerate(self.symbols):
-            for i2, symbol2 in enumerate(self.symbols):
+        for i1, symbol1 in enumerate(self.symbol_set):
+            for i2, symbol2 in enumerate(self.symbol_set):
                 for i3 in range(i1+1):
-                    trio = '{0}-{1}-{2}'.format(symbol1, symbol2, self.symbols[i3])
-                    self.trios.append(trio)
+                    symbol3 = self.symbol_set[i3]
+                    self.trios.append([symbol1, symbol2, symbol3])
+        # self.trios = []
+        # for i1, symbol1 in enumerate(self.symbols):
+        #     for i2, symbol2 in enumerate(self.symbols):
+        #         for i3 in range(i1+1):
+        #             trio = '{0}-{1}-{2}'.format(symbol1, symbol2, self.symbols[i3])
+        #             self.trios.append(trio)
     
     @property
     def covalence_radii(self):
         if self._covalence_radii is None:
-            covalence_radii = np.zeros(self.number, np.float64)
-            for i, element in enumerate(self.elements):
+            covalence_radii = np.zeros(self.num_total, np.float64)
+            for i, element in enumerate(self.symbols):
                 element_number = elements.numbers[element.upper()]
                 covalence_radii[i] = elements.radii[element_number]
             self._covalence_radii = covalence_radii
@@ -596,9 +663,9 @@ class Atoms(object):
     def covalence_radii_by_element(self):
         covalence_radii = self.covalence_radii
         if self._covalence_radii_by_element is None:
-            self._covalence_radii_by_element = dict((element, covalence_radius)
-                                                    for element, covalence_radius
-                                                    in zip(self.elements, covalence_radii))
+            self._covalence_radii_by_element = dict((atom_symbol, covalence_radius)
+                                                    for atom_symbol, covalence_radius
+                                                    in zip(self.symbols, covalence_radii))
         return self._covalence_radii_by_element
 
     @property
@@ -613,7 +680,7 @@ class Atoms(object):
             if self._norm_positions is None:
                 inv = np.linalg.inv(self.volume.vectors)           
                 self._norm_positions = np.array(self.positions, dtype=np.float64)                
-                for i in range(self.number):
+                for i in range(self.num_total):
                     pos = self.positions[i] - self.volume.origin - shift
                     self._norm_positions[i] = np.dot(inv, pos)
             return self._norm_positions        
@@ -629,7 +696,7 @@ class Atoms(object):
     @property
     def elementsorted_positions(self):
         if self._elementsorted_positions is None:
-            elems_list = self.elements.tolist()
+            elems_list = self.symbols
             indexes = list(range(len(elems_list)))
             positions_list = self.norm_positions.tolist()                
             _elems, _indexes, _positions = zip(*sorted(zip(elems_list,indexes,positions_list)))
@@ -646,18 +713,17 @@ class Atoms(object):
             self.change_bond_lengths = False
         return self._bonds
     
-    def bonds_by_dist(self,min_dist,max_dist):
-        self.indices = np.zeros(self.number)
-        for i, elem in enumerate(self.elements_kind):
-            self.indices[self.elements == elem] = i
+    def bonds_by_dist(self,min_dist, max_dist):
+        self.indices = np.zeros(self.num_total)
+        for i, elem in enumerate(self.symbol_set):
+            self.indices[self.symbols == elem] = i
         self._bonds = bonds.get_bonds_with_element_pair(self, min_dist, max_dist, 1.0)
         return self._bonds
 
-    def set_bond_lengths(self,bond_lengths=None):
+    def set_bond_lengths(self, bond_lengths=None):
         def set_covalence_bond():
             self.bond_lengths = {}
-            for pair in self.pairs:
-                elems = pair.split('-')
+            for elems in self.pairs:
                 dis = 0.0
                 _pair = (elems[0],elems[1])
                 for element in elems:
@@ -706,8 +772,8 @@ class Atoms(object):
     @property
     def colors(self):
         if self._colors is None:
-            colors = np.zeros((self.number, 3), np.float64)
-            for i, element in enumerate(self.elements):
+            colors = np.zeros((self.num_total, 3), np.float64)
+            for i, element in enumerate(self.symbols):
                 element_number = elements.numbers[element.upper()]
                 colors[i] = elements.colors[element_number]
             self._colors = colors/255
@@ -720,21 +786,21 @@ class Atoms(object):
     @radii.setter
     def radii(self, values):
         if values is None:
-            self._radii = np.ones((self.number), dtype=np.float64) * config.Computation.std_cutoff_radius
+            self._radii = np.ones((self.num_total), dtype=np.float64) * config.Computation.std_cutoff_radius
         elif isinstance(values, collections.abc.Mapping):
-            radii = [values[elem] for elem in self.elements]
+            radii = [values[elem] for elem in self.symbols]
             self._radii = np.array(radii, dtype=np.float64)
         elif isinstance(values, collections.abc.Iterable):
             self._radii = np.array(values, dtype=np.float64)
         else:
-            self._radii = np.ones((self.number), dtype=np.float64) * values
+            self._radii = np.ones((self.num_total), dtype=np.float64) * values
         indices = np.argsort(-self._radii, kind="mergesort")
         self.sorted_positions = self.positions[indices]        
         unique_radii, indices = np.unique(-self._radii, return_inverse=True)
         self.sorted_radii = -unique_radii
         self.radii_as_indices = np.sort(indices)
     
-    def transforrm(self, matrix,shift):
+    def transforrm(self, matrix, shift):
         pass
     
     @property
@@ -746,8 +812,8 @@ class Atoms(object):
         return self._grid
     
     @property
-    def rho(self):
-        return self.number/gridding.volume(self.volume.vectors)
+    def atom_number_density(self): #Old name: rho(self)
+        return self.num_total/gridding.volume(self.volume.vectors)
 
     def tohdf(self, h5group, overwrite=True):
         """
@@ -763,14 +829,11 @@ class Atoms(object):
         h5group.parent.attrs["volume"] = str(self.volume)
         writedataset(h5group, "positions", self.positions, overwrite)
         writedataset(h5group, "radii", self.radii, overwrite)
-        if np.any(self.elements == "atom"):
+        if np.any(self.symbols == "atom"):
             if USE_LOGGER:
                 logger.warn("Atom.elements contains default values. Not writing dataset.")
         else:
-            writedataset(h5group, "elements", self.elements, overwrite)
-        #TODO
-        print("self.bond_lengths")
-        print(self.bond_lengths)
+            writedataset(h5group, "symbols", self.symbols, overwrite)
         if self.bond_lengths is not None:
             list_bond_lengths = list()
             for a in self.bond_lengths.items():
@@ -1445,7 +1508,7 @@ class ResultsFile(Results):
                 group = f['atoms']
                 positions = np.array(group['positions'])
                 radii = np.array(group['radii'])
-                elements = [s.decode() for s in group['elements'][:]]
+                symbols = [s.decode() for s in group['symbols'][:]]
                 volume = group['volume'][0].decode()
                 origin = np.array(group['volume_origin'])                                
                 if "bond_lengths" in group.keys():
@@ -1456,7 +1519,7 @@ class ResultsFile(Results):
                 else:
                     bond_lengths = None
                     
-                self.atoms = Atoms(positions, radii, elements, volume)
+                self.atoms = Atoms(positions, radii, symbols, volume)
                 self.atoms.volume.origin = origin
                 self.atoms.set_bond_lengths(bond_lengths)
 
@@ -1548,7 +1611,7 @@ class ResultsFile(Results):
             group = f.create_group("atoms")
             group['positions'] = self.atoms.positions
             group['radii'] = self.atoms.radii
-            group['elements'] = self.atoms.elements.tolist()
+            group['symbols'] = self.atoms.symbols # group['elements'] = self.atoms.elements.tolist()
             group['volume'] = [str(self.atoms.volume)]
             group['volume_origin'] = self.atoms.volume.origin.tolist()
 
@@ -1561,8 +1624,8 @@ class ResultsFile(Results):
                 ds_txt = group.create_dataset('structure_text', (1, ), dtype=dt, compression="gzip")
                 ds_txt[0] = self.atoms.original_file_data.structure_text
                 
-            print('-----bond_lengths in Atoms')
-            print(self.atoms.bond_lengths)
+            # print('-----bond_lengths in Atoms')
+            # print(self.atoms.bond_lengths)
             if self.atoms.bond_lengths is not None:
                 list_bond_lengths = list()
                 for a in self.atoms.bond_lengths.items():

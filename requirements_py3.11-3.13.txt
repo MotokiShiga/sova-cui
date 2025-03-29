@@ -19,6 +19,7 @@ jupyterlab-widgets==3.0.13
 llvmlite==0.44.0
 matplotlib==3.10.0
 matplotlib-inline==0.1.7
+myst-parser==4.0.1
 numpy==2.1.0
 networkx==3.1
 PyCifRW==5.0.0
@@ -29,6 +30,10 @@ python-json-logger==2.0.7
 python-utils==3.5.2
 scipy==1.15.2
 setuptools==77.0.1
+sphinx==8.2.3
+sphinx-autobuild==2024.10.3
+sphinx-fontawesome==0.0.6
+sphinx-rtd_theme==3.0.2
 spglib==2.0.2
 tqdm==4.66.4
 twine==6.1.0

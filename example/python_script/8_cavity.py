@@ -11,7 +11,7 @@ structure_file = "../data/amorphous_md/a_SiO2_speed1e11K.xyz"
 f = File.open(structure_file)
 
 ### Get atomic and cell (simulation box) data
-atoms = f.getatoms()
+atoms = f.get_atoms()
 
 
 ### Cavity analysis

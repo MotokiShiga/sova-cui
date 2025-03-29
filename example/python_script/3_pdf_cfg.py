@@ -16,9 +16,9 @@ f = File.open(structure_file)
 # Get atomic position and cell (simulation box) data
 # Atom symbols need to be input because cfg files dose NOT have the information.
 elements = ['Si','O']
-atoms = f.getatoms(0,elements)
+atoms = f.get_atoms(0,elements)
 
-print("Atom symbols:", atoms.symbols)
+print("Atom symbols:", atoms.symbol_set)
 
 # CFG files have periodicity information.
 print("Is the periodicity information of the cell available?:")
@@ -31,13 +31,20 @@ r, hist = atom_pair_hist(atoms, dr) # calculate histograms
 # Input symbols option to determine plot order of atoms 
 #r, hist = histogram(atoms,dr,symbols=['Si','O'])
 
+# Labels of atom pairs
+num_pairs = len(atoms.pairs)
+label_pairs = []
+for i in range(num_pairs):
+    txt = atoms.pairs[i][0]+'-'+atoms.pairs[i][1]
+    label_pairs.append(txt)
+
 # Plot histograms of pair distance
-fig = plt.figure(figsize=(12, 4)) 
-for i in range(3):
+fig = plt.figure(figsize=(10, 3)) 
+for i in range(num_pairs):
     ax = fig.add_subplot(1, 3, i+1)
-    ax.bar(r, hist.T[i], width=dr*0.8, label=atoms.pairs[i])
+    ax.bar(r, hist.T[i], width=dr*0.8, label=label_pairs[i])
     ax.set_xlim(0.0,5.0)
-    ax.set_ylim(0,500)
+    ax.set_ylim(0,2000)
     ax.set_xlabel('r (Angstrom)')
     ax.set_ylabel('Number of atoms')
     ax.legend()
@@ -46,10 +53,10 @@ plt.show()
 
 
 # Calculate Pair distribution function (PDF) g_{ab}(r) functions
-r, partial_gr = pair_dist_func(atoms, hist, dr)
+partial_gr = pair_dist_func(atoms, r, hist)
 
 #Calculate related to neutron diffraction
-coeff_neutron = ncoeff(atoms.symbols, atoms.frac)
+coeff_neutron = ncoeff(atoms)
 
 # Calculate atomic pair distribution function for (neutron beam) g(r)
 gr_neutron = atomc_pair_dist_func_neutron(partial_gr, coeff_neutron)
@@ -58,19 +65,19 @@ gr_neutron = atomc_pair_dist_func_neutron(partial_gr, coeff_neutron)
 dq = 0.05
 qmin = 0.3
 qmax = 25.0
-q, partial_sq = partial_structure_factor(atoms, partial_gr, qmin, qmax, dr, dq)
+q, partial_sq = partial_structure_factor(atoms, r, partial_gr, qmin, qmax, dq)
 
 # Calculate structure factor by neutron beam diffraction S_N(Q)
 sq_neutron = structure_factor_neutron(partial_sq, coeff_neutron)
 
 #Calculate related to X-ray diffraction
-coeff_xray = xcoeff(atoms.symbols, atoms.frac,q)
+coeff_xray = xcoeff(atoms, q)
 
 # Calculate structure factor by X-ray beam diffraction S_X(Q)
 sq_xray = structure_factor_xray(partial_sq, coeff_xray)
 
 # Atomic number density
-rho = atoms.rho 
+rho = atoms.atom_number_density
 
 # Reduced atomic pair distribution function by neutron beam G(r)
 Gr_neutron = reduced_pair_dist_func(r, gr_neutron, rho)
@@ -81,11 +88,12 @@ Tr_neutron = total_corr_fun(r, gr_neutron, rho)
 # Calculate radial_dist_fun by neutron beam N(r)
 Nr_neutron = radial_dist_fun(r, gr_neutron, rho)
 
+
 # Plot functions g(r), total g(r), et al.
 fig = plt.figure(figsize=(18, 8)) 
 ax = fig.add_subplot(2, 4, 1)
-for i in range(3):    
-    ax.plot(r, partial_gr.T[i], label=atoms.pairs[i])
+for i in range(num_pairs):    
+    ax.plot(r, partial_gr.T[i], label=label_pairs[i])
 ax.set_xlabel('r (Angstrom)')
 ax.set_ylabel('Partial PDF g(r)')
 ax.legend()
@@ -96,8 +104,8 @@ ax.set_ylabel('Atomic PDF (Neutron) g(r)')
 ax.plot(r, gr_neutron)
 
 ax = fig.add_subplot(2, 4, 3)
-for i in range(3):    
-    ax.plot(q, partial_sq.T[i], label=atoms.pairs[i])
+for i in range(num_pairs):    
+    ax.plot(q, partial_sq.T[i], label=label_pairs[i])
 ax.set_xlabel('Q (Angstrom^(-1))')
 ax.set_ylabel('Partial structure factor S(Q)')
 ax.legend()
@@ -130,4 +138,3 @@ ax.plot(r, Nr_neutron)
 plt.subplots_adjust(wspace=0.3)
 plt.subplots_adjust(hspace=0.3)
 plt.show()
-

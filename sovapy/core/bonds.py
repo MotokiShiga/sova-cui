@@ -68,18 +68,18 @@ def get_bonds_with_radii(atoms, radii_sum_factor):
             print("Use a supercell structure to ensure that the minimum cell size exceeds {:.2f}.".format(grid.rmax))
             return
         
-        bond_matrix = np.identity(len(atoms.elements_kind))
-        for i, elem1 in enumerate(atoms.elements_kind):
-            for j, elem2 in enumerate(atoms.elements_kind):
+        bond_matrix = np.identity(len(atoms.symbol_set))
+        for i, elem1 in enumerate(atoms.symbol_set):
+            for j, elem2 in enumerate(atoms.symbol_set):
                 pair = (elem1, elem2)
                 if pair in atoms.bond_lengths.keys():
                     bond_matrix[i][j] = atoms.bond_lengths[pair]
                 else:
                     pair = (elem2, elem1)
                     bond_matrix[i][j] = atoms.bond_lengths[pair]
-        elements_indices = [atoms.elements_kind.index(e) for e in atoms.elements]
-        for index in range(atoms.number):
-            grid.neighbours(index, dist_max, index+1, atoms.number)
+        elements_indices = [atoms.symbol_set.index(e) for e in atoms.symbols]
+        for index in range(atoms.num_total):
+            grid.neighbours(index, dist_max, index+1, atoms.num_total)
             #delta = (atoms.covalence_radii[grid.inei] + atoms.covalence_radii[index]) * radii_sum_factor
             delta = np.array([bond_matrix[elements_indices[index]][elements_indices[j]] for j in grid.inei]) * radii_sum_factor           
             bond_target_indices = np.array(grid.inei)
@@ -112,7 +112,7 @@ def get_bonds_with_element_pair(atoms, min_dist, max_dist, radii_sum_factor):
     for index, position in enumerate(atoms.positions):
         distance_vector_array = atoms.positions[index+1:] - position
         distance_squared_array = np.sum(np.square(distance_vector_array), axis=1)
-        ntypes = len(atoms.elements_kind)
+        ntypes = len(atoms.symbol_set)
         #ic = int(i*(2*ntypes-(i+1))/2+j)
         ics = atoms.indices[index+1:]*(2*ntypes-(atoms.indices[index+1:]+1))/2+atoms.indices[index]
         ics.astype(int)
@@ -245,32 +245,3 @@ def export_bond_dihedral_angles(filename, atoms):
             outfile.write("{} {} {} {}".format(*bond_chain))
             outfile.write(" {}\n".format(angle))
 
-def main():
-    file_name = sys.argv[1]
-    frame = int(sys.argv[2])
-    f = file.File.open(file_name)
-    atoms = f.getatoms(frame)
-
-    bond_target_index_arrays = get_bonds_with_constant_delta(get_atoms(), 2.8)
-    bond_target_index_arrays = get_bonds_with_radii(atoms, 1.15)
-    bond_angles, bond_chain_angles = calculate_bond_angles(get_atoms(), bond_target_index_arrays)
-
-    export_bonds("bonds.txt", get_bonds_with_constant_delta(get_atoms(), 2.8))
-    export_bond_angles("bond_angles.txt", get_bond_angles())
-    export_bond_dihedral_angles("bond_dihedral_angles.txt", get_bond_chain_angles())
-
-    with open("bonds.txt", 'w') as outfile:
-        for source_index, target_indices in enumerate(bond_target_index_arrays):
-            for target_index in target_indices:
-                outfile.write("{} {}\n".format(source_index, target_index))
-    with open("bond_angles.txt", 'w') as outfile:
-        for bond1, bond2 in bond_angles.keys():
-            if bond1[0] > bond2[1]:
-                outfile.write("{} {} {} {}\n".format(bond1[0], bond1[1], bond2[1], bond_angles[bond1, bond2]))
-    with open("bond_dihedral_angles.txt", 'w') as outfile:
-        for bond_chain, angle in bond_chain_angles.items():
-            outfile.write("{} {} {} {}".format(*bond_chain))
-            outfile.write(" {}\n".format(angle))
-
-if __name__ == '__main__':
-    main()

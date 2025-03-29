@@ -1,46 +1,12 @@
-import os
-import h5py
+import os, h5py
 from . import data
-import numpy as np
-from itertools import repeat
-from . import elements
-from .io.io_utils import get_abspath
-from .volumes import HexagonalVolume
-
-from .io.io_utils import FileError
+from .io.io_utils import get_abspath, FileError
 from .io.input_file import InputFile
 from .io.xyz_file import XYZFile
 from .io.exyz_file import EXYZFile
 from .io.cfg_file import CFGFile
 from .io.cif_file import CIFFile
-        
-class NewFile(InputFile):
-    def __init__(self, path):
-        super().__init__(path)
 
-    def readinfo(self):        
-        try:
-            self._info.num_frames = 0            
-            self._info.num_frames += 1
-            if self._info.num_frames == 1:                
-                volume_info = 'CUB %f' % 1000.0
-            self._info.volumestr = volume_info
-            self.inforead = True
-        except IOError:
-            raise
-        except Exception as e:
-            raise FileError("Cannot read file info.", e)
-    
-    def readatoms(self, frame):        
-        if self.info.num_frames <= frame:
-            raise IndexError("Frame {} not found".format(frame))
-        
-        positions = []
-        symbols = []
-        positions.append([0.,0.,0.])
-        symbols.append('H')
-        return data.Atoms(positions, None, symbols, self.info.volume)
-    
 class ResultFile(InputFile):
     """
     Abstract access to a file that contains both input data (atoms) and
@@ -263,9 +229,10 @@ class HDF5File(ResultFile):
             raise
         except Exception as e:
             raise FileError("Cannot write results.", e)
-            
+
 class File(object):
-    """
+    """ Class to manage structure data file
+
     Provides static methods for easy access to files and directories.
     The class attribute `types` associates filename endings with
     classes to handle them.
@@ -273,20 +240,75 @@ class File(object):
     Attributes
     ----------
     types : dictionary
-        pair file format and file class
+        Pair of file format and file class
+    
     """   
     types = dict([
                      ("xyz", XYZFile),
                      ("exyz", EXYZFile),
+                     ("extxyz", EXYZFile),
                      ("cfg", CFGFile),
                      ("cif", CIFFile),
                      ("hdf5", HDF5File)
                  ])
-   
+
     @classmethod
-    def listdir(cls, directory):       
+    def open(cls, file_path):
+        """Open a structure data file
+
+        Get an associated sub-class of `InputFile` according to the given file.
+
+        Parameters
+        ----------
+        file_path : string
+            Path to the file
+            
+        Returns
+        ----------
+        FileClass : core.io.InputFile object 
+            An object of a subclass of core.io.InputFile.
+        
+        Raises
+        ----------
+        ValueError : 
+            Flag if the file format is unknown.
+        """        
+        e = file_path.split(".")[-1]
+        if e not in cls.types:
+            raise ValueError("Unknown file format")
+        
+        # Get associated class according to the file extension.
+        FileClass = cls.types[e]
+        return FileClass(file_path)
+        
+    @classmethod
+    def exists(cls, file_path):
+        """Check file existance
+
+        Check if a file exists and if it can be opened.
+
+        Parameters
+        ----------
+        file_path : string
+            Path to the file
+            
+        Returns
+        ----------
+        flag : bool 
+            `True` if the file exists and there is a subclass of :class:`InputFile`
+            associated with the filename ending.
         """
-        List all (possible) files in the directory.
+        
+        file_path = get_abspath(file_path)
+        name = os.path.basename(file_path)
+        flag = os.path.isfile(file_path) and name.split(".")[-1] in cls.types
+        return flag
+    
+    @classmethod
+    def list_dir(cls, directory):       
+        """List all files
+
+        List all files in the directory.
 
         Parameters
         ----------
@@ -301,56 +323,38 @@ class File(object):
        
         if not directory:
             directory = "."
-        return [f for f in os.listdir(directory)
+        return [f for f in os.list_dir(directory)
                 if cls.exists(f)]
+    
+    # Deprecated
+    # @classmethod
+    # def new(cls, file_path):
+    #     return NewFile(file_path)
+    
+#Deprecated
+# class NewFile(InputFile):
+#     def __init__(self, path):
+#         super().__init__(path)
 
-    @classmethod
-    def open(cls, filepath):
-        """
-        Get the associated :class:`InputFile` object for the given file.
-
-        Parameters
-        ----------
-        filepath : string
-            path to the file
-            
-        Returns
-        ----------
-        FileClass : object 
-            An object of a subclass of :class:`InputFile`.
+#     def readinfo(self):        
+#         try:
+#             self._info.num_frames = 0            
+#             self._info.num_frames += 1
+#             if self._info.num_frames == 1:                
+#                 volume_info = 'CUB %f' % 1000.0
+#             self._info.volumestr = volume_info
+#             self.inforead = True
+#         except IOError:
+#             raise
+#         except Exception as e:
+#             raise FileError("Cannot read file info.", e)
+    
+#     def readatoms(self, frame):        
+#         if self.info.num_frames <= frame:
+#             raise IndexError("Frame {} not found".format(frame))
         
-        Raises
-        ----------
-        ValueError : 
-            if the file format is unknown.
-        """        
-        e = filepath.split(".")[-1]
-        if e not in cls.types:
-            raise ValueError("Unknown file format")
-        FileClass = cls.types[e]
-        return FileClass(filepath)
-
-    @classmethod
-    def new(cls, filepath):
-        return NewFile(filepath)
-        
-    @classmethod
-    def exists(cls, filepath):
-        """
-        Check if a file exists and if it can be opened.
-
-        Parameters
-        ----------
-        filepath : string
-            path to the file
-            
-        Returns
-        ----------
-        flag : bool 
-            `True` if the file exists and there is a subclass of :class:`InputFile`
-            associated with the filename ending.
-        """
-        
-        filepath = get_abspath(filepath)
-        name = os.path.basename(filepath)
-        return os.path.isfile(filepath) and name.split(".")[-1] in cls.types
+#         positions = []
+#         symbols = []
+#         positions.append([0.,0.,0.])
+#         symbols.append('H')
+#         return data.Atoms(positions, None, symbols, self.info.volume)

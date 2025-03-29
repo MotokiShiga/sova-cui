@@ -11,8 +11,8 @@ from sovapy.computation.structure_factor import (atom_pair_hist, pair_dist_func,
                                                  structure_factor_neutron, structure_factor_xray,
                                                  reduced_pair_dist_func, total_corr_fun, radial_dist_fun,
                                                  ncoeff, xcoeff)
-from ..computation.structure_factor import triplets
-from ..computation.structure_factor import polyhedra
+from ..computation.structure_factor import bond_angle_hist
+from ..computation.structure_factor import tetrahedra
 from ..computation.rings import RINGs, Ring
 from ..computation.cavity import Cavity
 
@@ -49,7 +49,7 @@ class Analysis(object):
             group = f.create_group("atoms")
             group['positions'] = self.atoms.positions
             group['radii'] = self.atoms.radii
-            group['elements'] = self.atoms.elements.tolist()
+            group['symbols'] = self.atoms.symbols  # group['elements'] = self.atoms.elements.tolist()
             group['volume'] = [str(self.atoms.volume)]
             group['volume_origin'] = self.atoms.volume.origin.tolist()
 
@@ -98,6 +98,7 @@ class PDFAnalysis(Analysis):
         # Variables to save results
         self.r = None
         self.q = None
+        self.pdf_atom_pairs = None
         self.partial_gr = None
         self.gr_neutron = None
         self.partial_sq = None
@@ -118,28 +119,28 @@ class PDFAnalysis(Analysis):
         self.r, hist = atom_pair_hist(self.atoms, self.dr)
 
         # Calculate Pair distribution function (PDF) g_{ab}(r) functions
-        self.r, self.partial_gr = pair_dist_func(self.atoms, hist, self.dr)
+        self.partial_gr = pair_dist_func(self.atoms, self.r, hist)
 
         #Calculate related to neutron diffraction
-        coeff_neutron = ncoeff(self.atoms.symbols, self.atoms.frac)
+        coeff_neutron = ncoeff(self.atoms)
 
         # Calculate atomic pair distribution function for (neutron beam) g(r)
         self.gr_neutron = atomc_pair_dist_func_neutron(self.partial_gr, coeff_neutron)
 
         # Calculate Partial structure factors S{ab}(Q)
-        self.q, self.partial_sq = partial_structure_factor(self.atoms, self.partial_gr, self.qmin, self.qmax, self.dr, self.dq)
+        self.q, self.partial_sq = partial_structure_factor(self.atoms, self.r, self.partial_gr, self.qmin, self.qmax, self.dq)
 
         # Calculate structure factor by neutron beam diffraction S_N(Q)
         self.sq_neutron = structure_factor_neutron(self.partial_sq, coeff_neutron)
 
         #Calculate related to X-ray diffraction
-        coeff_xray = xcoeff(self.atoms.symbols, self.atoms.frac, self.q)
+        coeff_xray = xcoeff(self.atoms, self.q)
 
         # Calculate structure factor by X-ray beam diffraction S_X(Q)
         self.sq_xray = structure_factor_xray(self.partial_sq, coeff_xray)
 
         # Atomic number density
-        rho = self.atoms.rho 
+        rho = self.atoms.atom_number_density
 
         # Reduced atomic pair distribution function by neutron beam G(r)
         self.Gr_neutron = reduced_pair_dist_func(self.r, self.gr_neutron, rho)
@@ -155,11 +156,19 @@ class PDFAnalysis(Analysis):
         if not self.atoms.volume.periodic:
             print('Error: Cannot plot because any computed results were NOT found!')
             return 
+        
+        num_pairs = len(self.atoms.pairs)
+
+        # Labels of atom pairs
+        label_pairs = []
+        for i in range(num_pairs):
+            txt = self.atoms.pairs[i][0]+'-'+self.atoms.pairs[i][1]
+            label_pairs.append(txt)
 
         fig = plt.figure(figsize=figsize) 
         ax = fig.add_subplot(2, 4, 1)
-        for i in range(3):    
-            ax.plot(self.r, self.partial_gr.T[i], label=self.atoms.pairs[i])
+        for i in range(num_pairs):    
+            ax.plot(self.r, self.partial_gr.T[i], label=label_pairs[i])
         ax.set_xlabel('r (Angstrom)')
         ax.set_ylabel('Partial PDF g(r)')
         ax.legend()
@@ -170,8 +179,8 @@ class PDFAnalysis(Analysis):
         ax.plot(self.r, self.gr_neutron)
 
         ax = fig.add_subplot(2, 4, 3)
-        for i in range(3):    
-            ax.plot(self.q, self.partial_sq.T[i], label=self.atoms.pairs[i])
+        for i in range(num_pairs):    
+            ax.plot(self.q, self.partial_sq.T[i], label=label_pairs[i])
         ax.set_xlabel('Q (Angstrom^(-1))')
         ax.set_ylabel('Partial structure factor S(Q)')
         ax.legend()
@@ -261,15 +270,16 @@ class CoordinationNumberAnalysis(Analysis):
         self.atoms = atoms
 
         # Variables to save results 
-        self.elems        = None  # List of elements (atoms)
-        self.coord_num    = None  # List of coordination numbers
-        self.list_counts  = None  # Counts (elems, coord_num)
+        self.atom_symbol_set = atoms.symbol_set #The set of atoms (elements)) 
+        self.coord_num       = None  # List of coordination numbers
+        self.list_counts     = None  # Counts (elems, coord_num)
 
     # Input settings and run all computations for analysis
     def run(self):
 
         # Element list
-        self.elems = list(set(self.atoms.elements))
+        # self.elems = list(set(self.atoms.elements))
+        # self.symbol_set
 
         # List of coordination numbers
         cnums = np.array([len(b) for b in self.atoms.bonds])
@@ -280,15 +290,14 @@ class CoordinationNumberAnalysis(Analysis):
 
 
         # Count coordination numbers of each element
-        num_elems = len(self.elems)
+        num_elems = len(self.atom_symbol_set)  # The number of elements (atoms)
         num_crange = cmax-cmin+1
-        self.list_counts = np.zeros((num_elems,num_crange))
-        for cnt, elem in enumerate(self.elems):
-            ids = np.array([i for i, s in enumerate(self.atoms.elements) if s == elem])
+        self.list_counts = np.zeros((num_elems, num_crange))
+        for cnt, elem in enumerate(self.atom_symbol_set):
+            ids = np.array([i for i, s in enumerate(self.atoms.symbols) if s == elem])
             cnums_elem = cnums[ids]
             j=0
             for cn in self.coord_num:
-                self.list_counts[cnt,j] = cn
                 self.list_counts[cnt,j] = np.sum(cnums_elem==cn)
                 j += 1
 
@@ -296,14 +305,14 @@ class CoordinationNumberAnalysis(Analysis):
     # Plot all analysis results
     def plot(self, figsize=None):
         
-        num_elems = len(self.elems)
+        num_elems = len(self.atom_symbol_set) # The number of elements (atoms)
         row_num = (num_elems//3)+1
 
         if figsize is None:
             figsize=(12, row_num*2.5)
 
         fig = plt.figure(figsize=figsize) 
-        for i, elem in enumerate(self.elems):
+        for i, elem in enumerate(self.atom_symbol_set):
             ax = fig.add_subplot(row_num, 3, i+1)
             plt.bar(self.coord_num, self.list_counts[i,:])
             plt.xlabel('Coordination number of {:} atom'.format(elem))
@@ -324,10 +333,10 @@ class CoordinationNumberAnalysis(Analysis):
                 del f['coordination_number']         
             group = f.create_group("coordination_number")
 
-            num_elems = len(self.elems)
+            num_elems = len(self.atom_symbol_set)
             str_dtype = h5py.special_dtype(vlen=str)
-            dataset = group.create_dataset('elements', shape=(num_elems,), dtype=str_dtype)
-            for i, a in enumerate(self.elems):
+            dataset = group.create_dataset('atom_symbol_set', shape=(num_elems,), dtype=str_dtype)
+            for i, a in enumerate(self.atom_symbol_set):
                 dataset[i] = a
 
             group['coord_num'] = self.coord_num
@@ -337,8 +346,8 @@ class CoordinationNumberAnalysis(Analysis):
     def load_hdf5(self, hdf5_path):
         with h5py.File(hdf5_path, "r") as f:                
             if 'coordination_number' in f:
-                elems = list(f['coordination_number']['elements'])
-                self.elems = [a.decode() for a in elems]
+                atom_symbols = list(f['coordination_number']['atom_symbol_set'])
+                self.atom_symbol_set = [a.decode() for a in atom_symbols]
                 self.coord_num = np.array(f['coordination_number']['coord_num'])
                 self.list_counts = np.array(f['coordination_number']['list_counts'])
 
@@ -350,30 +359,31 @@ class BondAngleAnalysis(Analysis):
         self.atoms = atoms
         
         # Computation settings
-        self.nth   = bins  # The number of bins
+        self.num_bins   = bins  # The number of bins (Old name: nth)
 
         # Variables to save results
         
-        self.trios = None  # List of atom triplets
-        self.cth   = None  # Angle values (nth +1)
-        self.ncth  = None  # The number of counts
+        self.trios       = None  # List of atom triplets
+        self.angles      = None  # Angle values  (Old name: cth)
+        self.hist_angles = None  # The number of counts  (Old name: ncth)
 
     # Input settings and run all computations for analysis
     def run(self):
 
         # Calculate bond angles
         # (Angle values, histograms for all triplets)
-        self.cth, self.ncth = triplets(self.atoms, nth=self.nth) 
-        
+        # self.cth, self.ncth = bond_angle_hist(self.atoms, nth=self.nth) 
+        self.angles, self.hist_angles = bond_angle_hist(self.atoms, num_bins=self.num_bins, norm_sin=True, prob=True)
+
         # Remove redundant triplets that does not include in the setting
         self.trios = np.array(self.atoms.trios)
         flag_triplet = list()
-        for hist in self.ncth:
+        for hist in self.hist_angles:
             _sum = np.sum(np.array(hist))
             flag_triplet.append(_sum>0)
         self.trios = self.trios[flag_triplet]
-        self.ncth = np.array(self.ncth)
-        self.ncth = self.ncth[flag_triplet] 
+        self.hist_angles = np.array(self.hist_angles)
+        self.hist_angles = self.hist_angles[flag_triplet] 
 
         log_str = 'Calculating bond angle histogram has completed.\n'
         if len(self.trios)>0:
@@ -382,16 +392,11 @@ class BondAngleAnalysis(Analysis):
             log_str += 'There is no triplet! Check the bond setting.'
         print(log_str)
 
-        # Save results in shared object
-        self.nth   = self.nth
-        self.trios = self.trios
-        self.cth   = self.cth
-        self.ncth  = self.ncth
 
     # Plot all analysis results
     def plot(self, figsize=None):
 
-        w = self.cth[1]-self.cth[0] # Angle interval
+        w = self.angles[1]-self.angles[0] # Angle interval
         num_trio = len(self.trios)
         row_num = (num_trio//3)+1
 
@@ -401,7 +406,8 @@ class BondAngleAnalysis(Analysis):
         fig = plt.figure(figsize=figsize) 
         for i, trio in enumerate(self.trios):
             ax = fig.add_subplot(row_num, 3, i+1)
-            ax.bar(self.cth, self.ncth[i], width=w*0.8, label=trio)
+            txt = trio[0] + '-' + trio[1] + '-' + trio[2]
+            ax.bar(self.angles, self.hist_angles[i], width=w*0.8, label=txt)
             ax.set_xlim(0.0,180.0)
             # ax.set_ylim(0,1.0)
             ax.set_xlabel('Angle (Degree)')
@@ -421,33 +427,35 @@ class BondAngleAnalysis(Analysis):
             if 'bond_angle' in f:
                 del f['bond_angle']         
             group = f.create_group("bond_angle")
-            group['nth'] = self.nth
-            group['cth'] = self.cth
-            group['ncth'] = self.ncth
+            group['num_bins'] = self.num_bins
+            group['angles'] = self.angles
+            group['hist_angles'] = self.hist_angles
 
             list_trios = list()
             for trio in self.trios:
-                list_trios.append(trio.split('-'))
-            group["trios"] = list_trios 
+                # list_trios.append(trio.split('-'))
+                list_trios.append([str(s) for s in trio])
+            group['trios'] = list_trios
 
     # Load analysis results from hdf5
     def load_hdf5(self, hdf5_path):
         with h5py.File(hdf5_path, "r") as f:                
             if 'bond_angle' in f:
-                self.nth   = int(np.array(f['bond_angle']['nth']))
-                self.cth   = np.array(f['bond_angle']['cth'])
-                self.ncth  = np.array(f['bond_angle']['ncth'])
+                self.num_bins   = int(np.array(f['bond_angle']['num_bins']))
+                self.angles   = np.array(f['bond_angle']['angles'])
+                self.hist_angles  = np.array(f['bond_angle']['hist_angles'])
                 list_trios = list(f['bond_angle']['trios'])
                 trios = list()
                 for trio in list_trios:
                     trio = [t.decode() for t in trio]
-                    trios.append('-'.join(trio))
+                    # trios.append('-'.join(trio))
+                    trios.append(trio)
                 self.trios = np.array(trios)
 
 
 class TetrahedralOrderAnalysis(Analysis):
 
-    def __init__(self, atoms, bins=100, list_cc_dist=None):
+    def __init__(self, atoms, num_bins=100, list_cc_dist=None):
         #Atoms object
         self.atoms = atoms
 
@@ -456,7 +464,7 @@ class TetrahedralOrderAnalysis(Analysis):
             return 
 
         # Computation settings
-        self.bins = bins
+        self.num_bins = num_bins #Old name: self.num_bins
         if list_cc_dist is not None:
             self.list_cc_dist = list_cc_dist
         else:
@@ -477,7 +485,7 @@ class TetrahedralOrderAnalysis(Analysis):
             print('ERROR: Set parameter list_cc_dist!')
             return
         for elem1, elem2, rmax in self.list_cc_dist:
-            polys = polyhedra(self.atoms, center=elem1, around=elem2, rmax=float(rmax))
+            polys = tetrahedra(self.atoms, center=elem1, around=elem2, rmax=float(rmax))
             q = []
             idx_center = []
             for poly in polys:
@@ -504,7 +512,7 @@ class TetrahedralOrderAnalysis(Analysis):
         for i in range(num_tet):
             plt.subplot(row_num, 3, i+1)
             label = self.list_cc_dist[i][0] + '-' + self.list_cc_dist[i][1] +'4'
-            plt.hist(self.list_q[i], bins=self.bins, range=(0, 1), label=label)
+            plt.hist(self.list_q[i], bins=self.num_bins, range=(0, 1), label=label)
             plt.xlim(0.0,1.0)
             plt.xlabel('Tetrahedral order (q-value)')
             plt.ylabel('Counts')
@@ -861,7 +869,8 @@ class CavityAnalysis(Analysis):
         elif isinstance(cutoff_radii, float) or isinstance(cutoff_radii, int):
             cutoff_radii = float(cutoff_radii)
             self.cutoff_radii = dict()
-            for elem in atoms.elements_kind:
+            # for elem in atoms.elements_kind:
+            for elem in atoms.symbol_set:
                 self.cutoff_radii[str(elem)] = cutoff_radii
         else:
             print('ERROR: cutoff_radii should be float or dict!')

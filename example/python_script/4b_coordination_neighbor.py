@@ -11,15 +11,15 @@ structure_file = "../data/amorphous_md/a_SiO2_speed1e11K.xyz"
 f = File.open(structure_file)
 
 # Get atomic and cell (simulation box) data
-atoms = f.getatoms()
+atoms = f.get_atoms()
 
 # Setting of maximum bond lengths for atomic element pairs
 # Set -1 to pairs for which you don't want to build bonds.
 bond_lengths = {('Si', 'O') : 2.0, ('Si', 'Si') : -1, ('O', 'O') : -1}
 
 # Indices of Si and O atoms
-ids_si = [i for i, s in enumerate(atoms.elements) if s == 'Si']
-ids_o = [i for i, s in enumerate(atoms.elements) if s == 'O']
+ids_si = [i for i, s in enumerate(atoms.symbols) if s == 'Si']
+ids_o = [i for i, s in enumerate(atoms.symbols) if s == 'O']
 
 # Initial value of maximum coordination number
 # cn_max is increased if the maximamum is larger
