@@ -240,22 +240,26 @@ class TriclinicVolume(CellInfo):
     
     @property
     def volume_from_vectors(self):
-        """Compute the cell volume from lattice vectors
+        """Compute the cell volume
+
+        Compute the cell volume from (half) lattice vectors.
+        In volume class, the length of lattice vectors are half length of original ones.
 
         Returns
         -------
         volume : float
             The cell volume
         """
+        # Compute the determinant of lattice matrix 
         triprod = self.vectors[0][0]*self.vectors[1][1]*self.vectors[2][2] \
                 + self.vectors[1][0]*self.vectors[2][1]*self.vectors[0][2] \
                 + self.vectors[2][0]*self.vectors[0][1]*self.vectors[1][2] \
                 - self.vectors[2][0]*self.vectors[1][1]*self.vectors[0][2] \
                 - self.vectors[1][0]*self.vectors[0][1]*self.vectors[2][2] \
                 - self.vectors[0][0]*self.vectors[2][1]*self.vectors[1][2]
-        _volume = 8.0*abs(triprod)
-        if self.truncated == True:
-            _volume = _volume/2.0
+        _volume = 8.0*abs(triprod) # 8(=2x2x2) because of the half vector lengths
+        # if self.truncated == True:
+        #     _volume = _volume/2.0
 
         return _volume
 

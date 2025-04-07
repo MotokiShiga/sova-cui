@@ -26,11 +26,12 @@ static PyObject *calc_histogram(PyObject *self, PyObject *args)
   PyObject *atoms_it, *mat_it, *ni_it;
   PyObject *item, *_ni;
   double d, dr;
-  int truncated;
+  // int truncated;
   
   int *hist;
   
-  if (!PyArg_ParseTuple(args, "OOOddi", &atoms, &mat, &_ni, &d, &dr, &truncated))
+  // if (!PyArg_ParseTuple(args, "OOOddi", &atoms, &mat, &_ni, &d, &dr, &truncated))
+  if (!PyArg_ParseTuple(args, "OOOdd", &atoms, &mat, &_ni, &d, &dr))
     return NULL;
   
   atom_count = PyList_Size(atoms);
@@ -122,13 +123,13 @@ static PyObject *calc_histogram(PyObject *self, PyObject *args)
       //printf("%f, %f, %f\n", x, y, z);      
       //exit(1);
 
-      if (truncated == 1 && fabs(x) + fabs(y) + fabs(z) > 1.5)
-      {
-	x = x - sign(x);
-	y = y - sign(y);
-	z = z - sign(z);
-	//printf("ggg\n");
-      }
+      // if (truncated == 1 && fabs(x) + fabs(y) + fabs(z) > 1.5)
+      // {
+	    //   x = x - sign(x);
+	    //   y = y - sign(y);
+	    //   z = z - sign(z);
+	    //   //printf("ggg\n");
+      // }
       //printf("%f, %f, %f\n", x, y, z);
       
       d = metric[0].x*x*x + metric[1].y * y*y + metric[2].z * z*z

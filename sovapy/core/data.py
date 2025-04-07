@@ -627,7 +627,7 @@ class Atoms(object):
         # The set of atom pairs
         self.pairs = []
         for i in range(len(self.symbol_set)):
-            for j in range(i,len(self.symbol_set)):
+            for j in range(i+1):
                 self.pairs.append([self.symbol_set[i], self.symbol_set[j]])
         # self.pairs = []
         # for i in range(len(self.symbols)):
@@ -670,15 +670,28 @@ class Atoms(object):
 
     @property
     def norm_positions(self):
+        """Atomic normalized positions
+
+        Compute atomic normalized (or fractional) positions (x,y,z) in range [-1.0, +1.0].
+        The length of self.volume.vectors is the half of lattice vectors (1/2 cell size) 
+
+        Returns
+        -------
+        _norm_positions :numpy.ndarray (#atoms, 3)
+            Normalized positions of atoms
+        """
         if self.volume.Minv is None:
             return None
         self.is_norm = True        
         if self.is_norm == False:
             return self.positions
         else:
-            shift = np.array(self.volume.Minv).dot(np.array([0.5,0.5,0.5]))
             if self._norm_positions is None:
-                inv = np.linalg.inv(self.volume.vectors)           
+                # Compute the center position in the direct (not fractional) space
+                shift = np.array(self.volume.Minv).dot(np.array([0.5,0.5,0.5]))
+                # Compute the transformation matrix from the direct to the fractional positions
+                inv = np.linalg.inv(self.volume.vectors)
+                # Compute normalized positions from the direct positions
                 self._norm_positions = np.array(self.positions, dtype=np.float64)                
                 for i in range(self.num_total):
                     pos = self.positions[i] - self.volume.origin - shift
@@ -814,7 +827,7 @@ class Atoms(object):
     
     @property
     def atom_number_density(self): #Old name: rho(self)
-        return self.num_total/gridding.volume(self.volume.vectors)
+        return self.num_total/self.volume.volume_from_vectors
 
     def tohdf(self, h5group, overwrite=True):
         """

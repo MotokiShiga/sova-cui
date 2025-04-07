@@ -1,7 +1,7 @@
 import math
 import numpy as np
 from ..core import elements
-from ..core.gridding import metric, d, volume
+from ..core.gridding import metric, shortest_cell_length #d, volume
 from . import element_data as elem
 from .geometry import Polyhedron
 
@@ -13,7 +13,8 @@ except ImportError:
     print('Warning calculate histogram is slow')
 
 # def histogram(atoms, dr, symbols=None, truncated=False):
-def atom_pair_hist(atoms, dr, truncated=False):
+# def atom_pair_hist(atoms, dr, truncated=False):
+def atom_pair_hist(atoms, dr):
     """Histogram of atom-pair distances
     
     The number of atoms at a distance from r to r+dr from center atoms.
@@ -63,8 +64,9 @@ def atom_pair_hist(atoms, dr, truncated=False):
     if atoms.volume.periodic:
         centres = atoms.norm_positions
         vectors = atoms.volume.vectors
-        _d = d(vectors)
-        nr = int(_d/dr)+1
+        # h_min = d(vectors)
+        h_shortest = shortest_cell_length(vectors)
+        nr = int(h_shortest/dr)+1
                 
         if has_hist: # Implement using the compiled code
             # Sort atomic positions by sorted indexes
@@ -78,7 +80,8 @@ def atom_pair_hist(atoms, dr, truncated=False):
                 _metric.append(list(m))
 
             # Compute histogram using method compiled from c code.
-            histogram = np.array(hist.calc_histogram(atom_positions, _metric, atoms.num_atoms, _d, dr, truncated))
+            # histogram = np.array(hist.calc_histogram(atom_positions, _metric, atoms.num_atoms, h_shortest, dr, truncated))
+            histogram = np.array(hist.calc_histogram(atom_positions, _metric, atoms.num_atoms, h_shortest, dr))
 
         else: # Implement using the python code
 
@@ -106,10 +109,10 @@ def atom_pair_hist(atoms, dr, truncated=False):
                     x = 2.0*(x/2.0-int(x/2.0))-1.0
                     y = 2.0*(y/2.0-int(y/2.0))-1.0
                     z = 2.0*(z/2.0-int(z/2.0))-1.0
-                    if (truncated == True and math.fabs(x)+math.fabs(y)+math.fabs(z) > 1.5):
-                        x = x-sign(1.0, x)
-                        y = y-sign(1.0, y)
-                        z = z-sign(1.0, z)
+                    # if (truncated == True and math.fabs(x)+math.fabs(y)+math.fabs(z) > 1.5):
+                    #     x = x-sign(1.0, x)
+                    #     y = y-sign(1.0, y)
+                    #     z = z-sign(1.0, z)
                     dis = _metric[0][0]*x*x+_metric[1][1]*y*y+_metric[2][2]*z*z \
                         + 2.0*(_metric[0][1]*x*y+_metric[0][2]*x*z+_metric[1][2]*y*z)
                     dis = math.sqrt(dis)
@@ -173,10 +176,8 @@ def pair_dist_func(atoms, r, histogram):
     """
 
     num_atoms = atoms.num_atoms
-    vectors = atoms.volume.vectors
     partial_gr = np.zeros_like(histogram, dtype=float)
     nr, npar = histogram.shape  
-    _volume = volume(vectors)
     ntypes = len(num_atoms)
     nxn = np.zeros(npar)
     dr = r[1]-r[0]
@@ -190,6 +191,9 @@ def pair_dist_func(atoms, r, histogram):
                 nxn[ic] = nxn[ic]*2
     
     # Compute PDF function
+    # vectors = atoms.volume.vectors
+    # _volume = volume(vectors)
+    _volume = atoms.volume.volume_from_vectors
     for ir in range(1, nr):
         gnorm = r[ir]*r[ir]*dr*2.0*np.pi/(_volume)
         for ic in range(npar):
