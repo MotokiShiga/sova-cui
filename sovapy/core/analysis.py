@@ -49,9 +49,10 @@ class Analysis(object):
             group = f.create_group("atoms")
             group['positions'] = self.atoms.positions
             group['radii'] = self.atoms.radii
-            group['symbols'] = self.atoms.symbols  # group['elements'] = self.atoms.elements.tolist()
+            group['symbols'] = self.atoms.symbols # group['elements'] = self.atoms.elements.tolist()
             group['volume'] = [str(self.atoms.volume)]
             group['volume_origin'] = self.atoms.volume.origin.tolist()
+            group['volume_periodic_boundary'] = np.array(self.atoms.volume.periodic_boundary).tolist()
 
             #Original text data
             if (self.atoms.original_file_data is not None):
@@ -587,7 +588,7 @@ class TetrahedralOrderAnalysis(Analysis):
 
 class RingAnalysis(Analysis):
 
-    def __init__(self, atoms, guttman=True, king=False, primitive=False, cutoff_primitive=24, num_parallel=-1, close=True):
+    def __init__(self, atoms, guttman=True, king=False, primitive=False, cutoff_primitive=24, num_parallel=1, closed=True):
         #Atoms object
         self.atoms = atoms
 
@@ -600,8 +601,8 @@ class RingAnalysis(Analysis):
         self.flag_king = king
         self.flag_primitive = primitive
         self.cutoff_primitive = cutoff_primitive   # Cut-off ring size of primitive rings
-        self.num_parallel = num_parallel # The number of cores in parallel computation (-1: single core) 
-        self.flag_close = close # Enumerate rings closed in the real space
+        self.num_parallel = num_parallel # The number of cores in parallel computation (1: single core) 
+        self.flag_closed = closed # Enumerate rings closed in the real space
 
 
         # Variables to save results
@@ -619,10 +620,10 @@ class RingAnalysis(Analysis):
             self.guttman_ring = RINGs(self.atoms)
             print('Calculating Guttman rings....')
             self.guttman_ring.calculate(ring_type=RINGs.RingType.GUTTMAN, num_parallel=self.num_parallel)
-            if self.flag_close:
+            if self.flag_closed:
                 rings = list()
                 for ring in self.guttman_ring.rings:
-                    if ring.close:
+                    if ring.closed:
                         rings.append(ring)
                 self.guttman_ring.rings = rings
 
@@ -631,10 +632,10 @@ class RingAnalysis(Analysis):
             self.king_ring = RINGs(self.atoms)
             print('Calculating King rings....')
             self.king_ring.calculate(ring_type=RINGs.RingType.KING, num_parallel=self.num_parallel)
-            if self.flag_close:
+            if self.flag_closed:
                 rings = list()
                 for ring in self.king_ring.rings:
-                    if ring.close:
+                    if ring.closed:
                         rings.append(ring)
                 self.king_ring.rings = rings
             print('Done.\n\n')
@@ -643,10 +644,10 @@ class RingAnalysis(Analysis):
             self.primitive_ring = RINGs(self.atoms)
             self.primitive_ring.calculate(ring_type=RINGs.RingType.PRIMITIVE,
                                                  cutoff_size=self.cutoff_primitive, num_parallel=self.num_parallel)
-            if self.flag_close:
+            if self.flag_closed:
                 rings = list()
                 for ring in self.primitive_ring.rings:
-                    if ring.close:
+                    if ring.closed:
                         rings.append(ring)
                 self.primitive_ring.rings = rings
             print('Done.\n\n')
@@ -737,7 +738,7 @@ class RingAnalysis(Analysis):
     def calculate_ring_stats(self, rings):
         r_size, r_roundness, r_roughness = list(), list(), list()
         for r in rings:
-            r_size.append(r.number) # the number of atoms in a ring
+            r_size.append(r.size) # the number of atoms in a ring
             r_roundness.append(r.roundness)
             r_roughness.append(r.roughness)
             

@@ -1,5 +1,5 @@
 import numpy as np
-import itertools, os, logging
+import itertools, os, logging, multiprocessing
 from concurrent.futures import ThreadPoolExecutor
 from concurrent import futures
 import networkx as nx
@@ -153,7 +153,7 @@ def parallel_enumerate_primitive_ring(atoms_extracted, atoms_all, chemical_bond_
     """
 
     # the number of processes in parallel computation
-    if num_parallel > os.cpu_count():
+    if num_parallel > os.cpu_count()-2:
         num_parallel = os.cpu_count()-2
     elif num_parallel == -1:
         num_parallel = os.cpu_count()-2
@@ -172,25 +172,13 @@ def parallel_enumerate_primitive_ring(atoms_extracted, atoms_all, chemical_bond_
     num = len(atoms_extracted)
     
     with tqdm(total=num) as progress_bar:
-        
-        with ThreadPoolExecutor() as executor:
-            
-            set_rings_all = set()
-            procs = []
-            for n in atoms_extracted:
-                proc = executor.submit(fun_enum_rings, n)            
-                procs.append(proc)
-                
-            for f in futures.as_completed(procs):
-                progress_bar.update(1)
-                                
-            executor.shutdown(wait=True)
-            
-            for p in procs:
-                s= p.result()            
-                if len(s)>0:
-                    for ss in list(s):
-                        set_rings_all.add(ss)
+        with multiprocessing.Pool(processes=num_parallel) as pool:
+                set_rings_all = set() # set to store enumerated rings
+                for rings in pool.imap_unordered(fun_enum_rings, atoms_extracted):
+                    if len(rings)>0:
+                        for ring in list(rings):
+                            set_rings_all.add(ring)
+                    progress_bar.update(1)
     
     return set_rings_all
 
@@ -405,7 +393,7 @@ def sub_parallel_enumerate_king_ring(n, G, flag_primitive):
 def parallel_enumerate_king_ring(atoms_extracted, atoms_all, chemical_bond_index, flag_primitive, num_parallel=-1):
 
     # the number of processes in parallel computation
-    if num_parallel > os.cpu_count():
+    if num_parallel > os.cpu_count()-2:
         num_parallel = os.cpu_count()-2
     elif num_parallel == -1:
         num_parallel = os.cpu_count()-2
@@ -427,33 +415,13 @@ def parallel_enumerate_king_ring(atoms_extracted, atoms_all, chemical_bond_index
     fun_enum_rings = partial(sub_parallel_enumerate_king_ring, G=G, flag_primitive=flag_primitive) 
     
     with tqdm(total=num) as progress_bar:
-        
-        with ThreadPoolExecutor() as executor:
-            #progress_bar = tqdm(total = num)
-            set_rings_all = set()
-            procs = []
-            for n in atoms_extracted:
-                proc = executor.submit(fun_enum_rings, n)            
-                procs.append(proc)
-                
-            for f in futures.as_completed(procs):
-                progress_bar.update(1)
-                                
-            executor.shutdown(wait=True)
-            
-            for p in procs:
-                s= p.result()            
-                if len(s)>0:
-                    for ss in list(s):
-                        set_rings_all.add(ss)
-    
-    #with multiprocessing.Pool(processes=num_parallel) as pool:
-    #    set_rings_all = set() # set to store enumerated rings
-    #    set_rings = pool.map(fun_enum_rings, list_nodes)
-    #    for s in set_rings:
-    #        if len(s)>0:
-    #            for ss in list(s):
-    #                set_rings_all.add(ss)
+        with multiprocessing.Pool(processes=num_parallel) as pool:
+                set_rings_all = set() # set to store enumerated rings
+                for rings in pool.imap_unordered(fun_enum_rings, atoms_extracted):
+                    if len(rings)>0:
+                        for ring in list(rings):
+                            set_rings_all.add(ring)
+                    progress_bar.update(1)
     
     return set_rings_all
 
@@ -588,7 +556,7 @@ def sub_parallel_enumerate_guttman_ring(i, atoms_extracted, G, chemical_bond_ind
 def parallel_enumerate_guttman_ring(atoms_extracted, atoms_all, chemical_bond_index, num_parallel=-1):
 
     # the number of processes in parallel computation
-    if num_parallel > os.cpu_count():
+    if num_parallel > os.cpu_count()-2:
         num_parallel = os.cpu_count()-2
     elif num_parallel == -1:
         num_parallel = os.cpu_count()-2
@@ -611,25 +579,13 @@ def parallel_enumerate_guttman_ring(atoms_extracted, atoms_all, chemical_bond_in
     num = chemical_bond_index.shape[0]
     
     with tqdm(total=num) as progress_bar:
-        
-        with ThreadPoolExecutor(max_workers=num_parallel) as executor:
-            #progress_bar = tqdm(total = num)
-            set_rings_all = set()
-            procs = []
-            for n in index_bonds:
-                proc = executor.submit(fun_enum_rings, n)            
-                procs.append(proc)
-                
-            for f in futures.as_completed(procs):
+        with multiprocessing.Pool(processes=num_parallel) as pool:
+            set_rings_all = set() # set to store enumerated rings
+            for rings in pool.imap_unordered(fun_enum_rings, index_bonds):
+                if len(rings)>0:
+                    for ring in list(rings):
+                        set_rings_all.add(ring)
                 progress_bar.update(1)
-                                
-            executor.shutdown(wait=True)
-            
-            for p in procs:
-                s= p.result()            
-                if len(s)>0:
-                    for ss in list(s):
-                        set_rings_all.add(ss)
     
     return set_rings_all
 
@@ -714,9 +670,132 @@ class Ring(object):
     
     def __str__(self):
         return str(self.indexes)
+        
+    @property
+    def size(self):
+    # def number(self):
+        """The number of atoms in the ring
+
+        Returns:
+            int: The number of atoms
+        """
+        return len(self.indexes)
+    
+    def save_xyz(self, fname):
+        """Save atomic positions in the ring to a xyz file
+
+        Save atomic positions in the ring, whose origine is averaged position,
+        to a xyz file.
+
+        Parameters
+        ----------
+        fname : str
+            File name
+        """
+
+        # Atomic positions normalized in range [-1,+1].
+        centres = self.atoms.norm_positions
+        # Atomic symbols
+        symbols = self.atoms.symbols
+        num_atoms = self.size
+        # The first atom index in the ring
+        i = self.indexes[0]
+        # Atomic positions in the non-normalized axis
+        xyz = [[0., 0., 0.]]
+        for j in self.indexes[1:]:
+            # Shift the position not to be over the boundary
+            x = centres[j][0]-centres[i][0]+3.
+            y = centres[j][1]-centres[i][1]+3.
+            z = centres[j][2]-centres[i][2]+3.
+            # Compute non-normalized positions using lattice vectors
+            x = 2.*(x/2.-int(x/2.))-1.
+            y = 2.*(y/2.-int(y/2.))-1.
+            z = 2.*(z/2.-int(z/2.))-1.
+            x, y, z = np.dot(self.atoms.volume.vectors, [x,y,z])
+            xyz.append([x, y, z])        
+        xyz = np.array(xyz)
+
+        # Compute atomic positions centered by the averaged position
+        ring_centers = xyz.mean(axis=0)
+        xyz0 = xyz - ring_centers
+
+        # Save atomic positions to a xyz file
+        with open(fname, 'w') as fsave:
+            fsave.write(str(num_atoms) + '\n\n')
+            for n, j in enumerate(self.indexes):
+                fsave.write('{:} {:11.04f} {:11.04f} {:11.04f}\n'.format(symbols[j], xyz0[n,0], xyz0[n,1], xyz0[n,2]))
+  
+    def calc_svd(self):
+        """Compute singular values of atomic positions
+
+        Computed singular values are equivarent to the root 
+        of eigen-values of the covariance matrix of atomic positions.
+        """
+
+        # Atomic positions normalized in range [-1,+1].
+        centres = self.atoms.norm_positions        
+        # The first atom index in the ring
+        i = self.indexes[0]
+        # Atomic positions in the non-normalized axis
+        xyz = [[0., 0., 0.]]
+        for j in self.indexes[1:]:
+            # Shift the position not to be over the boundary
+            x = centres[j][0]-centres[i][0]+3.
+            y = centres[j][1]-centres[i][1]+3.
+            z = centres[j][2]-centres[i][2]+3.
+            # Compute non-normalized positions using lattice vectors
+            x = 2.*(x/2.-int(x/2.))-1.
+            y = 2.*(y/2.-int(y/2.))-1.
+            z = 2.*(z/2.-int(z/2.))-1.
+            x, y, z = np.dot(self.atoms.volume.vectors, [x,y,z])
+            xyz.append([x, y, z])        
+        xyz = np.array(xyz)
+
+        # Compute atomic positions centered by the averaged position
+        ring_centers = xyz.mean(axis=0)
+        xyz0 = xyz - ring_centers
+
+        # Compute the root of eigen-values of the covariance matrix
+        svd_u, svd_s, svd_uh = np.linalg.svd(xyz0)
+        self.ellipsoid_lengths = svd_s
     
     @property
-    def close(self):
+    def roundness(self):
+        """Compute the ring roundness
+
+        Returns:
+            float: ring roundness
+        """
+        if self.ellipsoid_lengths is None:
+            self.calc_svd()
+        if self._roundness is None:
+            self._roundness = self.ellipsoid_lengths[1]/self.ellipsoid_lengths[0]        
+        return self._roundness
+        
+    @property
+    def roughness(self):
+        """Compute the ring roughness
+
+        Returns:
+            float: ring roughness
+        """
+        if self.ellipsoid_lengths is None:
+            self.calc_svd()
+        if self._roughness is None:            
+            self._roughness = self.ellipsoid_lengths[2]/np.sqrt(self.ellipsoid_lengths[0]*self.ellipsoid_lengths[1])        
+        return self._roughness
+
+    @property
+    def closed(self):
+        """Check if the ring is closed in the real space.
+
+        Rings in the network can be not-closed in the real space
+        because of the periodic boundary condition. 
+        This method check this in the real space.
+
+        Returns:
+            bool: If the ring is clsed in the real space.
+        """
         bond_index = self.atoms.bonds.tolist()
         sum_shift = np.zeros(3, dtype='int8')
         lpath = list(self.indexes)
@@ -728,48 +807,14 @@ class Ring(object):
             return False
         else:
             return True
-        
-    @property
-    def number(self):
-        return len(self.indexes)
-    
-    def calc_svd(self):
-        centres = self.atoms.norm_positions        
-        i = self.indexes[0]
-        xyz = [[0., 0., 0.]]
-        for j in self.indexes[1:]:
-            x = centres[j][0]-centres[i][0]+3.
-            y = centres[j][1]-centres[i][1]+3.
-            z = centres[j][2]-centres[i][2]+3.
-            x = 2.*(x/2.-int(x/2.))-1.
-            y = 2.*(y/2.-int(y/2.))-1.
-            z = 2.*(z/2.-int(z/2.))-1.
-            x, y, z = np.dot(self.atoms.volume.vectors, [x,y,z])
-            xyz.append([x, y, z])        
-        xyz = np.array(xyz)
-        ring_centers = xyz.mean(axis=0)
-        xyz0 = xyz - ring_centers
-        svd_u, svd_s, svd_uh = np.linalg.svd(xyz0)
-        self.ellipsoid_lengths = svd_s
-    
-    @property
-    def roundness(self):
-        if self.ellipsoid_lengths is None:
-            self.calc_svd()
-        if self._roundness is None:
-            self._roundness = self.ellipsoid_lengths[1]/self.ellipsoid_lengths[0]        
-        return self._roundness
-        
-    @property
-    def roughness(self):
-        if self.ellipsoid_lengths is None:
-            self.calc_svd()
-        if self._roughness is None:            
-            self._roughness = self.ellipsoid_lengths[2]/np.sqrt(self.ellipsoid_lengths[0]*self.ellipsoid_lengths[1])        
-        return self._roughness
 
     @property
     def over_boundary(self):
+        """Check if the ring is over the prriodic boundary.
+
+        Returns:
+            bool: If the ring is over the periodic boundary.
+        """
         bond_index = self.atoms.bonds.tolist()
         lpath = list(self.indexes)
         for ns, ne in zip(lpath, lpath[1:]+lpath[:1]):
@@ -786,95 +831,6 @@ class RINGs:
         KING           = 1 # King
         PRIMITIVE      = 2 # Primitive
         PRIMITIVE_KING = 3 # Primitive-King
-    
-    """Analysis of the topology of chemical bonds
-    
-    This class can be used for topological analysis of network forming chemical structure
-    based on rings and tetrahedra.
-    
-    Parameters
-    ----------
-    filename : str
-        File name of structure model (atomic symbols and coordinates).
-        
-    lattice_size : float, default=None, optional 
-        The length of a simulation box. Cubic is assumed in this class.
-        If lattice_size is None, a non-periodic structure is assumed.
-
-    
-    Attributes
-    ----------
-    num_atoms : int
-        The number of atoms in the lattice
-                
-    atom_symbols : array (str) of shape (num_atoms,)
-        List of atomic symbols
-    
-    chemical_bond_index_atoms : array (int) of shape (# of bonds, 2)
-        List of atom pairs which have a chemical bonds
-    
-    chemical_bond_index_cells : array (int) of shape(# of bonds, 3)
-        Indices of a super cell that the second atom of a bond is included.
-        The element must be one of {-1, 0, +1}.
-    
-    bond_pair_atom_symbols : list of list (str) of shape (2,)
-        List of paird atom symbols to make chemical bonds. 
-        
-    bond_pair_dist_max : list of list (int)
-        List of maximum lengths of chemical bonds between an atom pair. 
-        
-    bond_flag_periodicity : Boolean 
-        Whether periodic condition is assumed.
-        
-    ring_type : str, {'Primitive', 'King', 'Primitive_King', 'Guttman'}
-        A type of enumerated rings.
-    
-    rings : list of list (int) of shape (# of atoms in a ring)
-        List of the sets of atom index in rings
-    
-    ring_centers : array of shape (# of rings, 3)
-        Ring center coordinates computate from the average over atoms in a ring.
-    
-    ring_normal_vectors : array of shape (# of rings, 3)
-        Normal vectors of planes fitted by atoms in each ring.
-        
-    ring_ellipse_long_vectors :  array of shape (# of rings, 3)
-        Long axes of ellipses fitted by atomic configuration in each ring.
-    
-    ring_ellipse_short_vectors :  array of shape (# of rings, 3)
-        Long axes of ellipses fitted by atomic configuration in each ring.
-        
-    ring_ellipsoid_lengths : array of shape (# of rings, 3)
-        Length of three axes of an ellipsoid fitted by atomic configuration in a ring.
-        
-    ring_near_pairs : array of shape (# of ring pairs, 2)
-        Pairs of ring indeces whose distance is less than a threshold.
-    
-    ring_pair_distances : array of shape (# of ring pairs,)
-        Distances of ring centers.
-    
-    ring_pair_index_cells : array of shape (# of ring pairs, 3)
-        Indices of a super cell that the second ring center is included.
-        The element must be one of {-1, 0, +1}.
-    
-    ring_circleness : array of shape (# of rings,)
-        Circleness of rings.
-    
-    tetra_q_values : array (int) of shape (# of tetrahedra,)
-        q-values of tetrahedrons, which evaluate symmetry.
-    
-    tetra_center_indices : array (int) of shape (# of tetrahedra,)
-        Indices of center atoms of tetrahedra.
-    
-    tetra_neighbor_indices : array (int) of shape (# of tetrahedra, 4)
-        Indices of vertex atoms of tetrahedra.
-    
-    tetra_neighbor_distances : array (int) of shape (# of tetrahedra, 4)
-        Distances between a center atom and a tetrahedral vertex.
-
-    tetra_neighbor_cell_indices : array (int) of shape (# of tetrahedra, 4, 3)
-        Cell indices {-1, 0, +1}, from center atoms, of a tetrahedral vertex.
-    """
     
     def __init__(self, atoms):
         super().__init__()
@@ -942,19 +898,19 @@ class RINGs:
             atoms_extracted = atoms_all        
                 
         flag_type = True
-        if (ring_type == RINGs.RingType.PRIMITIVE)&(num_parallel == 0):            
+        if (ring_type == RINGs.RingType.PRIMITIVE)&((num_parallel == 0)|(num_parallel == 1)):            
             set_rings = enumerate_primitive_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms, cutoff_size, messenger=messenger)
         elif (ring_type == RINGs.RingType.PRIMITIVE)&(num_parallel != 0):
             set_rings = parallel_enumerate_primitive_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms, 
                                                           cutoff_size, num_parallel=num_parallel)
-        elif (ring_type == RINGs.RingType.PRIMITIVE_KING)&(num_parallel == 0):
+        elif (ring_type == RINGs.RingType.PRIMITIVE_KING)&((num_parallel == 0)|(num_parallel == 1)):
             set_rings = enumerate_king_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms, flag_primitive=True)
-        elif (ring_type == RINGs.RingType.KING)&(num_parallel == 0):
+        elif (ring_type == RINGs.RingType.KING)&((num_parallel == 0)|(num_parallel == 1)):
             set_rings = enumerate_king_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms, flag_primitive=False, messenger=messenger)
         elif (ring_type == RINGs.RingType.KING)&(num_parallel != 0):
             set_rings = parallel_enumerate_king_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms, \
                  flag_primitive=False, num_parallel=num_parallel)
-        elif (ring_type == RINGs.RingType.GUTTMAN)&(num_parallel == 0):
+        elif (ring_type == RINGs.RingType.GUTTMAN)&((num_parallel == 0)|(num_parallel == 1)):
             set_rings = enumerate_guttman_ring(atoms_extracted, atoms_all,self.chemical_bond_index_atoms, messenger=messenger)
         elif (ring_type == RINGs.RingType.GUTTMAN)&(num_parallel != 0):
             set_rings = parallel_enumerate_guttman_ring(atoms_extracted, atoms_all, self.chemical_bond_index_atoms, 
@@ -968,3 +924,26 @@ class RINGs:
             self.ring_type = ring_type
             self.rings = [Ring(self.atoms, list(r)) for r in list(set_rings)] # save rings as list
         
+    def save_xyz_files(self, dir_name):
+        """Save atomic postions to xyz files
+
+        Save atomic positions in rings, whose origine is averaged position,
+        to xyz files.
+
+        Parameters
+        ----------
+        dir_name : str
+            Directory name to save xyz files 
+        """
+
+        if len(self.rings)==0:
+            print("Not found enumerated ring!")
+        else:
+            if os.path.isdir(dir_name):
+                raise print("Choose another directory name because it exist already!")
+            else:
+                os.makedirs(dir_name)
+                for n, ring in enumerate(self.rings):
+                    fname = os.path.join(dir_name, str(n+1)+'.xyz')
+                    # Save atomic positions in a ring to a xyz file
+                    ring.save_xyz(fname)

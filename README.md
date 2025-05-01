@@ -56,14 +56,14 @@ Major packages used for our development
 | spglib               | 2.0.2     |
 
   
-The versions of other packages can be found in requirements.txt.
+The versions of other packages can be found in requirements_py3.11-3.13.txt.
 
-You can make the virtual environment for sova by
+You can make the virtual environment for sovapy by
 ```
-python -m venv sova-cui
-source sova-cui/bin/activate
+python -m venv sovapy
+source sovapy/bin/activate
 pip install --upgrade pip
-pip install -r requirements.txt
+pip install -r requirements_py3.11-3.13.txt
 ```
 
 ## Acknowledgements
@@ -83,7 +83,8 @@ SOVA reuses source codes of the following package:
 4_coordination  : Coordination number analysis (amorphous SiO2)
 5_bond_angle    : Bond angle analysis (amorphous SiO2)
 6_tetra_order   : Tetrahedral order analysis (q-value) (amorphous SiO2)
-7_ring          : Ring analysis  (beta-cristobalite)
+7a_ring          : Ring analysis  (beta-cristobalite)
+7b_ring_parallel_comp          : Ring analysis by parallel computation  (beta-cristobalite)
 8_cavity        : Cavity analysis (amorphous SiO2)
 9_save_result   : Save and load calculated results
 ``` 

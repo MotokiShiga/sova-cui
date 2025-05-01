@@ -29,7 +29,7 @@ rings_king = ring.calculate(ring_type=RINGs.RingType.KING)
 # rings_primitive = ring.calculate(ring_type=RINGs.RingType.PRIMITIVE)
 
 num_rings1 = len(rings_guttman)
-s1 = rings_guttman[0].number
+s1 = rings_guttman[0].size
 print("")
 print("The number of Guttman rings: ", num_rings1)
 print("The size of the 1st Guttman ring:", s1)
@@ -65,6 +65,7 @@ with ResultsFile(path, 'r') as fr:
     # result_rings_primitive = fr.rings_primitive
     result_cavity          = fr.cavity
 
+### Load the file that contains calculated results
 print("\n")
 print('Data information:')
 print('Package: ', name)
@@ -78,7 +79,7 @@ print("")
 result_atoms.bond_summary()
 
 num_rings2 = len(result_rings_guttman)
-s2 = result_rings_guttman[0].number
+s2 = result_rings_guttman[0].size
 print("")
 print(type(result_rings_guttman))
 print("The number of Guttman rings: ", num_rings2)

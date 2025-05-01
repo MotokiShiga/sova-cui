@@ -1,7 +1,7 @@
 # Author: Motoki Shiga and Hidetoshi Morita
 # email: motoki.shiga.b4@tohoku.ac.jp
 #
-# Copyright (c) 2024 
+# Copyright (c) 2025 
 # Please see the LICENSE file for further information.
 
 
@@ -16,7 +16,7 @@ AUTHOR_EMAIL = 'motoki.shiga.b4@tohoku.ac.jp'
 URL = 'https://github.com/MotokiShiga/sova-cui'
 LICENSE = 'MIT License'
 DOWNLOAD_URL = 'https://github.com/MotokiShiga/sova-cui'
-PYTHON_REQUIRES = ">=3.10"
+PYTHON_REQUIRES = ">=3.11"
 # Get the current version number:
 with open('sovapy/__init__.py') as fd:
     VERSION = re.search("__version__ = '(.*)'", fd.read()).group(1)
@@ -38,8 +38,9 @@ CLASSIFIERS = [
     'Intended Audience :: Science/Research',
     'License :: OSI Approved :: MIT License',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
     'Topic :: Scientific/Engineering',
     'Topic :: Scientific/Engineering :: Information Analysis',
     'Topic :: Scientific/Engineering :: Physics',
