@@ -54,7 +54,6 @@ Major packages used for our development
 | PyCifRW             | 5.0.0      |
 | scipy | 1.15.2    |
 | spglib               | 2.0.2     |
-
   
 The versions of other packages can be found in requirements_py3.11-3.13.txt.
 
@@ -65,6 +64,9 @@ source sovapy/bin/activate
 pip install --upgrade pip
 pip install -r requirements_py3.11-3.13.txt
 ```
+
+**Notice**: Some dependencies, such as igraph, are distributed under the GPL. Do not redistribute sovapy bundled with the source code of these packages.
+
 
 ## Acknowledgements
 
